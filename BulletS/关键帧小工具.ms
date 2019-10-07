@@ -1,0 +1,464 @@
+/*
+ * @Description: 关键帧小工具,移动帧得筛选Biped,先暂时搁置...
+ * @Author: Bullet.S
+ * @Date: 2019-09-28 11:48:53
+ * @LastEditors: Bullet.S
+ * @LastEditTime: 2019-10-02 00:42:09
+ * @Email: animator.bullet@foxmail.com
+ */
+-- getKeyTime $.rotation.controller 1
+-- selectKeys $ (getKeyTime $.rotation.controller 1) ($.rotation.controller.keys[$.rotation.controller.keys.count].time)
+-- slidertime
+
+--$.controller.子动画数量, 若子动画.keys 不为空 则取之加入数组  参考清理无限帧递归
+
+-- $.controller[2].keys[1].selected = true
+-- SubAnim:Link_Times 移动帧特殊处理 取link帧 $.controller[2].keys
+-- if (getSubanimname $.controller 2) == #Link_Times then  判断为link帧
+
+-- movekeys $.controller 5 #selection  移动帧
+
+
+
+try(destroydialog rolloutBulletKeyTools)catch()
+
+Global mouPosX = mouse.screenpos.x  
+Global mouPosY = mouse.screenpos.y  --获取鼠标位置
+
+Global arrKeysTime = #()
+Global arrLinkKeys = #()
+Global keyFirst
+Global keyEnd
+Global fnAddKyes
+Global fnSelectKeys
+Global fnSelLinkKeys
+
+Global BulletConfig = ((getDir #scripts) + "\\BulletConfig.ini")  --配置文件路径
+Global iniPos  --位置保存记录
+-- Global keyMoved
+
+fn fnGetConfig attr nameAttrClass nameAttr valueAttr =  --设置初始信息方法
+(
+	attr = (GetINISetting BulletConfig nameAttrClass nameAttr)  --先提取文件中的记录
+	if attr == "" then attr = (execute valueAttr) else (attr = execute attr)  --判断记录为空与否得到需要的记录参数
+)
+fn fnSaveConfig =  --引用上面方法提出需要的参数
+(----提出脚本位置
+	iniPos = fnGetConfig iniPos "BulletKeyToolsSet" "Pos" ([mouPosX,mouPosY] as string)
+)
+fnSaveConfig () --初始执行一遍
+fn fnSetConfig =  --保存参数,脚本位置
+(
+	SetINISetting BulletConfig "BulletKeyToolsSet"  "Pos" (iniPos as string)
+)
+
+rollout rolloutBulletKeyTools "关键小帧工具 v0.4" width:175 height:130
+(
+	-- group "移动帧数"
+	-- (
+	-- 	edittext edtMoveKey "" pos:[10,26] width:60 usePercentageWidth:true percentageWidth:44.0 labelOnTop:false text:"5f" bold:true readOnly:false 
+	-- 	button btnSet "5"  pos:[85,25] width:35
+	-- 	button btnSet10 "10"  pos:[130,25] width:35
+	-- 	button btnSet20 "20"  pos:[175,25] width:35
+	-- )
+	group ""
+	(
+		edittext edtSliderTime " 定位帧数"  pos:[10,18] width:55 usePercentageWidth:true percentageWidth:44.0 labelOnTop:true text:(sliderTime as string) bold:true readOnly:false
+-- 		button btnMoveBeforeKeys " " images:#("VCRControls_24i.bmp","VCRControls_24i.bmp",28,3,3,3,3) \
+-- 		pos:[12,75] toolTip:"移动滑条前面关键帧" border:false
+		button btnSelBeforeKeys " " images:#("VCRControls_24i.bmp","VCRControls_24i.bmp",28,3,3,3,3) \
+		pos:[75,25] width:30 toolTip:"选择滑条前面关键帧" border:false
+		button btnSelAfterKeys " " images:#("VCRControls_24i.bmp","VCRControls_24i.bmp",28,11,11,11,11) \
+		pos:[135,25] width:30 toolTip:"选择滑条后面关键帧" border:false
+-- 		button btnMoveAfterKeys " " images:#("VCRControls_24i.bmp","VCRControls_24i.bmp",28,11,11,11,11) \
+-- 		pos:[178,75] toolTip:"移动滑条后面关键帧" border:false
+		button btnSelAllKeys " " images:#("VCRControls_24i.bmp","VCRControls_24i.bmp",28,26,26,26,26) \
+		pos:[105,25] width:30 toolTip:"选择所有关键帧" border:false
+		button btnClearSelKeys "清除帧选择" pos:[10,60] tooltip:"清除关键帧选择 (非删除帧)"
+		button btnToKeysRange "首尾帧范围" pos:[90,60] tooltip:"帧范围变成选中或全部物体首尾帧\r\n小心无限帧~ 后果未知..."
+	)
+	label labTips "---- 处理选中, 未选择即全部 ---" \
+	pos:[5,90] style_sunkenedge:true height:35 width:165
+	HyperLink lnkLink "--- [ Author: Bullet.S  2019.09 ]---" pos:[7,107] width:160 color:(color 148 0 211) hovercolor:(color 255 0 255) visitedcolor:(color 46 139 87) address:"https://space.bilibili.com/2031113"
+
+	fn fnCollectKeys = ---------收集关键帧
+	(
+		arrKeysTime = #()
+		arrLinkKeys = #()
+		arrKeys = #() ----------------先清空数组
+
+		fn fnAddKyes tempObj =
+		(	
+			local numObjSubs
+			local numLinkSubs
+			local tempSubAnim
+			local tempController
+			local tempLinkObj
+			local tempLinkSubAnim
+			local tempLinkController
+			
+			if tempObj.controller != undefined then
+			(
+				numObjSubs = tempObj.numSubs   ---------子动画数量
+				for n = 1 to numObjSubs do 
+				(
+					tempSubAnim = GetSubAnim tempObj n
+					if tempSubAnim != undefined then
+					(
+						tempController = tempSubAnim.Controller
+						if ((classof tempController != UndefinedClass) and (classof tempController != Link_Constraint) and (classof tempController != LinkTimeControl)) then
+						(
+							if tempController != undefined then 
+							(
+								if tempController.keys[1] != undefined then
+								(
+									arrKeysTime += for i in tempController.keys collect i.time
+-- 									print (n as string + ":" + arrKeysTime as string)
+								)
+							)
+						)
+						else ----------------上面收集正常帧, 下面收集link帧
+						(
+							tempLinkObj = tempController
+							if tempLinkObj != undefined then
+							(
+								numLinkSubs = tempLinkObj.numSubs
+								for n = 1 to numLinkSubs do
+								(
+									tempLinkSubAnim = GetSubAnim tempLinkObj n
+									for n = 1 to numLinkSubs do
+									(
+										tempLinkSubAnim = GetSubAnim tempLinkObj n
+										if (GetSubAnimName tempLinkObj n) == #Link_Times then
+										(
+											if tempLinkSubAnim.keys[1] != undefined then
+											(
+												arrLinkKeys = tempLinkSubAnim.keys
+											)
+										)
+									)
+									if tempLinkSubAnim.numSubs > 0 do (fnAddKyes tempLinkSubAnim)
+								)
+							)
+						)
+					)
+					if tempSubAnim.numSubs > 0 do (fnAddKyes tempSubAnim)  ----子动画递归
+				)
+			)
+		)
+		case of  -----------处理选中,未选中则处理全部
+		(
+			(selection.count == 0):(for i in objects do fnAddKyes i)
+			default:(for i in selection do fnAddKyes i)
+		)
+		arrKeysTime = makeUniqueArray arrKeysTime  ---去除重复帧数
+		sort arrKeysTime  ----帧数排序
+		if ((arrKeysTime.count != 0) and (arrKeysTime.count > 1)) then
+		(
+			keyFirst = arrKeysTime[1]            ------找到首帧
+			keyEnd = arrKeysTime[arrKeysTime.count]   -----------找到尾帧
+		)
+		else
+		(
+			if (arrKeysTime.count == 1) then
+			(
+				keyFirst = arrKeysTime[1]
+				keyEnd = keyFirst + 1
+			)
+		)
+	)
+	
+	fn fnChangeedtSliderTime =   ------------关键帧数字随滑条改变
+	(
+		edtSliderTime.text = slidertime as string
+	)
+
+	fn fnSelLinkKeys keyBegin KeyEnd symbol =  ---------------选择link帧方法
+	(
+		if arrLinkKeys.count != 0 then
+		(
+			for i in arrLinkKeys do   -------link帧选中
+			(
+				i.selected = false ---先取消之前link帧选中状态
+				case of  -------------判断link帧位置,数字是随便取的方便判断情况
+				(
+					(symbol == 0):(if i.time <= KeyEnd then i.selected = true)
+					(symbol == 1):(if i.time >= keyBegin then i.selected = true)
+					(symbol == 2):(i.selected = true)
+				)
+			)
+		)
+	)
+
+	fn fnSelKeys keyBegin KeyEnd symbol=  ---------------选择帧的方法
+	(
+		fn fnSelectKeys keyBegin KeyEnd symbol =  -------因为有选中和没选择状态, 所以加一个方法精简下
+		(
+			deselectKeys $           --清除之前选中的关键帧
+			if arrKeysTime.count != 0 then
+			(
+				selectkeys $ keyBegin KeyEnd  -------------选中正常帧
+				fnSelLinkKeys keyBegin KeyEnd symbol --------------选中link帧
+			)
+			else
+			(
+				fnSelLinkKeys keyBegin KeyEnd symbol
+			)
+		)
+		case of 
+		(
+			(selection.count == 0):  ----------判断是否有选中物体
+			(
+				select objects    ---没有选择物体则选择所有物体
+				fnSelectKeys keyBegin KeyEnd symbol
+				-- deselectKeys $   --清除之前选中的关键帧
+				-- selectkeys $ keyBegin KeyEnd  -------------选中正常帧
+				-- for i in arrLinkKeys do  -------link帧选中
+				-- (
+				-- 	i.selected = false  ---先取消之前link帧选中状态
+				-- 	case of  -------------判断link帧位置
+				-- 	(
+				-- 		(symbol == 0):(if i.time <= KeyEnd then i.selected = true)
+				-- 		(symbol == 1):(if i.time >= keyBegin then i.selected = true)
+				-- 		(symbol == 2):(i.selected = true)
+				-- 	)
+				-- )
+			)
+			default:  ----------------
+			(
+				fnSelectKeys keyBegin KeyEnd symbol
+				-- deselectKeys $
+				-- selectkeys $ keyBegin KeyEnd
+				-- for i in arrLinkKeys do 
+				-- (
+				-- 	i.selected = false
+				-- 	case of
+				-- 	(
+				-- 		(symbol == 0):(if i.time <= KeyEnd then i.selected = true)
+				-- 		(symbol == 1):(if i.time >= keyBegin then i.selected = true)
+				-- 		(symbol == 2):(i.selected = true)
+				-- 	)
+				-- )
+			)
+		)
+	)
+		
+	on rolloutBulletKeyTools open do  ----打开脚本时操作
+	(
+		-- iniPos = (GetDialogPos rolloutBulletKeyTools) 
+		fnSaveConfig ()  ---------------脚本位置赋值
+		fnSetConfig ()  ----------------保存位置信息到ini文件
+		fnChangeedtSliderTime ()
+		registerTimeCallback fnChangeedtSliderTime  -------------帧数随滑条改变添加回调
+	)
+	
+	on rolloutBulletKeyTools close do -- 关闭记忆浮动窗口位置
+	(
+		iniPos = (GetDialogPos rolloutBulletKeyTools)
+		fnSetConfig ()
+	)
+	
+	on edtSliderTime entered valTime do  --------滑条定位到输入的帧数
+	(
+		if ((valTime != ".") and (valTime as time != undefined) and (valTime != "")) then
+		(
+			case of  ----------判断输入帧数是否在帧栏范围外
+			(
+				(valTime as time > animationrange.end):
+				(
+					animationrange = (interval animationrange.start (valTime as time))
+					slidertime = valTime as time
+				)
+				(valTime as time < animationrange.start):
+				(
+					animationrange = (interval (valTime as time) animationrange.end)
+					slidertime = valTime as time
+				)
+				default:(slidertime = valTime as time)
+			)
+		)
+		else messageBox "---------------\r\n请输入帧数"
+	)
+
+-- 	on edtMoveKey entered val do
+-- 	(
+-- 		if ((val != ".") and (val as time != undefined) and (val != "") and (val as integer > 0)) then
+-- 		(
+-- 			edtMoveKey.text = (val as time)as string
+-- 			keyMoved = (val as integer)
+-- 		)
+-- 		else messageBox "---------------\r\n请输入帧数"
+-- 	)
+-- 	on edtMoveKey change val do
+-- 	(
+-- 		if ((val != ".") and (val as time != undefined) and (val != "") and (val as integer > 0)) then
+-- 		(
+-- 			keyMoved = (val as integer)
+-- 		)
+-- 		else messageBox "---------------\r\n请输入帧数"
+-- 	)
+
+	-- on btnSet pressed do 
+	-- (
+	-- 	edtMoveKey.text = "5f"
+	-- 	keyMoved = 5
+	-- )
+	-- on btnSet10 pressed do 
+	-- (
+	-- 	edtMoveKey.text = "10f"
+	-- 	keyMoved = 10
+	-- )
+	-- on btnSet20 pressed do
+	-- (
+	-- 	edtMoveKey.text = "20f"
+	-- 	keyMoved = 20
+	-- )
+	
+	on btnSelBeforeKeys pressed do  ------------选择滑条之前帧
+	(
+		fnCollectKeys ()
+		if arrLinkKeys.count != 0 then
+		(
+			for i in arrLinkKeys do i.selected = false
+		)
+		if arrKeysTime.count != 0 then
+		(
+			if keyFirst <= sliderTime then 
+			(
+				fnSelKeys keyFirst sliderTime 0
+			)
+			else 
+			(
+				fnSelKeys sliderTime sliderTime 0
+			)
+		)
+		else
+		(
+			if arrLinkKeys.count != 0 then
+			(
+				if arrLinkKeys[1].time <= sliderTime then 
+				(
+					fnSelLinkKeys arrLinkKeys[1].time sliderTime 0
+				)
+				else 
+				(
+					fnSelLinkKeys sliderTime sliderTime 0
+				)
+			)
+		)
+	)
+	
+	on btnSelAfterKeys pressed do  -------------选择滑条之后帧
+	(
+		fnCollectKeys ()
+		if arrKeysTime.count != 0 then
+		(
+			if arrLinkKeys.count != 0 then
+			(
+				for i in arrLinkKeys do i.selected = false
+			)
+			if keyEnd >= sliderTime then 
+			(
+				fnSelKeys sliderTime keyEnd 1
+			)
+			else 
+			(
+				fnSelKeys sliderTime sliderTime 1
+			)
+		)
+		else
+		(
+			if arrLinkKeys.count != 0 then
+			(
+				if arrLinkKeys[1].time >= sliderTime then 
+				(
+					fnSelLinkKeys sliderTime arrLinkKeys[1].time 1
+				)
+				else 
+				(
+					fnSelLinkKeys sliderTime sliderTime 1
+				)
+			)
+		)
+	)
+	
+	on btnSelAllKeys pressed do     ------------------选择所有帧
+	(
+		fnCollectKeys ()
+		if arrKeysTime.count != 0 then
+		(
+			fnSelKeys keyFirst keyEnd 2
+		)
+		else
+		(
+			if arrLinkKeys.count != 0 then
+			(
+				fnSelLinkKeys arrLinkKeys[1].time arrLinkKeys[arrLinkKeys.count].time 2
+			)
+		)
+	)
+
+	on btnClearSelKeys pressed do  ---------------------清除帧选择
+	(
+		fnCollectKeys ()
+		if arrKeysTime.count != 0 then
+		(
+			for i in objects do deselectKeys i
+			if arrLinkKeys.count != 0 then
+			(
+				for i in arrLinkKeys do i.selected = false
+			)
+		)
+		else
+		(
+			if arrLinkKeys.count != 0 then
+			(
+				for i in arrLinkKeys do i.selected = false
+			)
+		)
+	)
+
+	on btnToKeysRange pressed do   ---------------帧栏显示首尾帧范围
+	(
+		fnCollectKeys ()
+		if (arrKeysTime.count != 0) then
+		(
+			if (arrLinkKeys.count != 0) then
+			(
+				case of
+				(
+					((arrLinkKeys[1].time >= keyFirst) and (arrLinkKeys[arrLinkKeys.count].time <= keyEnd)):
+					(animationrange = (interval keyFirst keyEnd))
+					((arrLinkKeys[1].time < keyFirst) and (arrLinkKeys[arrLinkKeys.count].time <= keyEnd)):
+					(animationrange = (interval arrLinkKeys[1].time keyEnd))
+					((arrLinkKeys[1].time < keyFirst) and (arrLinkKeys[arrLinkKeys.count].time >= keyEnd)):
+					(animationrange = (interval arrLinkKeys[1].time arrLinkKeys[arrLinkKeys.count].time))
+					((arrLinkKeys[1].time >= keyFirst) and (arrLinkKeys[arrLinkKeys.count].time > keyEnd)):
+					(animationrange = (interval keyFirst arrLinkKeys[arrLinkKeys.count].time))
+					((arrLinkKeys[1].time < keyFirst) and (arrLinkKeys[arrLinkKeys.count].time > keyEnd)):
+					(animationrange = (interval arrLinkKeys[1].time arrLinkKeys[arrLinkKeys.count].time))
+				)
+			)
+			else
+			(
+				animationrange = interval keyFirst keyEnd
+			)
+		)
+		else 
+		(
+			if ((arrLinkKeys.count != 0) and (arrLinkKeys.count > 1)) then 
+			(
+				animationrange = (interval arrLinkKeys[1].time arrLinkKeys[arrLinkKeys.count].time)
+			)
+			else 
+			(
+				if (arrLinkKeys.count == 1) then
+				(
+					animationrange = (interval arrLinkKeys[1].time (arrLinkKeys[1].time + 1))
+				)
+			)
+		)
+	)
+)
+Createdialog rolloutBulletKeyTools fgcolor:(color 148 0 211) pos:iniPos
+clearListener()  ---------清除侦听器

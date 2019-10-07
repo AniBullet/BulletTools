@@ -1,0 +1,14 @@
+name "BulletTools"
+description "Bullet.S Scripts"
+version 0.2
+
+extract to $temp
+
+treeMove "BulletS" to "$scripts"
+treeMove "DTools" to "$scripts"
+
+run "runBulletTools.mse"
+drop "runBulletTools.mse"
+
+clear temp on MAX exit
+clear temp on reset
