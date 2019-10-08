@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-08-03 17:36:21
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-10-04 20:19:15
+ * @LastEditTime: 2019-10-08 14:03:38
  * @Email: animator.bullet@foxmail.com
  */
 
@@ -17,6 +17,7 @@ Global ver = " v0.6  ---- ✪*6"
 
 Global pathScripts = ((getDir #scripts) + "\\BulletS")
 Global BulletConfig = ((getDir #scripts) + "\\BulletConfig.ini")  --配置文件路径
+Global pathLitScripts = ((getDir #scripts) + "\\BulletScripts")
 Global arrClass = #()
 Global nameArrClass = #()
 Global arrScripts = #()
@@ -621,8 +622,8 @@ rollout rolloutLit "快捷操作"
 	
 	button btnReset " " images:#("UVWUnwrapModes_24i.bmp","UVWUnwrapModes_24i.bmp",28,3,3,3,3) pos:(fnRolLitBtnPos 1 1) width:btnTipsSize height:btnTipsSize toolTip:"静默重置场景"
 	button btnTipsIsolate "" images:#("UVWUnwrapView_24i.bmp","UVWUnwrapView_24i.bmp",27,15,15,15,15) pos:(fnRolLitBtnPos 2 1)  width:btnTipsSize height:btnTipsSize toolTip:"单独显示选中物体"
-	button btnTips2 " " pos:(fnRolLitBtnPos 3 1) width:btnTipsSize height:btnTipsSize toolTip:"30帧率"
-	button btnTips3 " " pos:(fnRolLitBtnPos 4 1) width:btnTipsSize height:btnTipsSize toolTip:"60帧率"
+	button btnSetFps " " pos:(fnRolLitBtnPos 3 1) width:btnTipsSize height:btnTipsSize toolTip:"设置帧率"
+	button btnTips3 " " pos:(fnRolLitBtnPos 4 1) width:btnTipsSize height:btnTipsSize toolTip:""
 	button btnTips4 " " pos:(fnRolLitBtnPos 1 2) width:btnTipsSize height:btnTipsSize toolTip:"播放速度"
 	button btnTips5 " " pos:(fnRolLitBtnPos 2 2) width:btnTipsSize height:btnTipsSize toolTip:"播放速度"
 	button btnTips6 " " pos:(fnRolLitBtnPos 3 2) width:btnTipsSize height:btnTipsSize toolTip:"播放速度"
@@ -644,13 +645,6 @@ rollout rolloutLit "快捷操作"
 	button btnTips22 " " pos:(fnRolLitBtnPos 3 6) width:btnTipsSize height:btnTipsSize toolTip:" "
 	button btnTips23 " " pos:(fnRolLitBtnPos 4 6) width:btnTipsSize height:btnTipsSize toolTip:" "
 	
-	-- local strBtn = ""
-
-	-- fn fnCreateLitBtn btnName btnCaption btnImage btnTips
-	-- (
-	-- 	strBtn = "button " + 
-	-- )
-	
 	on lnkTips rightClick do popupMenu menuBStoolsSetting  --弹出设置菜单
 	
 	on btnReset pressed do (resetMaxFile #noPrompt;max tool maximize)  --静默重置场景
@@ -658,6 +652,12 @@ rollout rolloutLit "快捷操作"
 	on btnReset rightClick do (messagebox "---------------------------------------\r\n静默重置场景并最大化view, \r\n方便快速打开其他文件, \r\n不带之前材质球等多余配置, \r\n且没有重置提示~强烈推荐!")
 
 	on btnTipsIsolate pressed do (messagebox "---------------------------\r\n施工中,\r\n待添加更多实用功能")
+
+	on btnSetFps pressed do 
+	(
+		FileIn ("@" + pathLitScripts + "\\fnSetFps.ms")
+		popupMenu menuSetFps
+	)
 )
 CreateDialog BStools pos:iniPos style:#(#style_titlebar)
 ------------------- 创建子卷轴栏和按钮等等UI -------------------------------------------

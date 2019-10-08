@@ -1,6 +1,6 @@
 name "BulletTools"
 description "Bullet.S Scripts"
-version 0.2
+version 0.6
 
 extract to $temp
 
