@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-10-08 12:39:08
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-10-09 13:43:00
+ * @LastEditTime: 2019-10-09 21:59:36
  * @Email: animator.bullet@foxmail.com
  */
 
@@ -42,6 +42,7 @@ fn fnSetFps numFps =
 (
     framerate = numFps
     valueFps = numFps
+    strCurrentFps = "当前帧率: " + framerate as string + " FPS"
 )
 
 rcmenu menuSetFps

@@ -10,6 +10,11 @@ struct mseEncrypter
 			(
 				encryptscript msFile version:vers
 			)
+			if doesFileExist myFile do
+			(
+				deleteFile myFile
+				encryptscript msFile version:vers
+			)
 		)
 		myFile
 	),
@@ -51,7 +56,7 @@ struct mseEncrypter
 					false : (
 								local myEncScript = this.encryptScripts msFile:i vers:version
 								format "New encrypted file : %\n" myEncScript
-							 )
+							)
 				)
 			)
 			
@@ -118,7 +123,7 @@ rollout scriptEnc "MSE Maker" width:227 height:63
 	radiobuttons rdo_Ver "" pos:[4,41] width:86 height:16 labels:#("1", "0") default:1 columns:2
 	button btn_Enc "Encrypt" pos:[134,33] width:90 height:26  toolTip:"Start encrypting the file" enabled:false
 	groupBox grp1 "Version" pos:[1,27] width:105 height:32
-	checkButton ckb_newFolder "NF" pos:[107,33] width:26 height:26 enabled:false checked:true toolTip:"Move encrypted to new folder or not !" 
+	checkButton ckb_newFolder "NF" pos:[107,33] width:26 height:26 enabled:true checked:false toolTip:"Move encrypted to new folder or not !" 
 		
 	on btn_selFile pressed do
 	(

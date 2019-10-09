@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-08-03 17:36:21
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-10-09 13:48:37
+ * @LastEditTime: 2019-10-09 21:59:46
  * @Email: animator.bullet@foxmail.com
  */
 
@@ -39,6 +39,13 @@ Global rolloutTools
 Global rolloutLit
 Global BsTools
 Global fnResize
+
+------------------------方法引用-------------------------------
+FileIn (pathLitScripts + "\\fnSetPlaybackSpeed.ms")
+FileIn (pathLitScripts + "\\fnSetFps.ms")
+
+
+---------------------------------------------------------------
 
 fn fnGetConfig attr nameAttrClass nameAttr valueAttr =  --设置初始信息方法
 (
@@ -612,6 +619,80 @@ rollout rolloutTools "小工具"
 		)
 	)
 )
+
+rcmenu menuSetSpeed
+(
+    menuItem menuCurrentSpeed "" enabled:false
+    menuItem menuSet14Speed "-- 1/4x --"
+    menuItem menuSet12Speed "-- 1/2x --"
+    separator menuSepSpeedLow
+    menuItem menuSet1Speed "--  1x  --"
+    separator menuSepSpeedHigh
+    menuItem menuSet2Speed "--  2x  --"
+    menuItem menuSet4Speed "--  4x  --"
+
+    on menuSetSpeed open do 
+    (
+        judgePlaySpeedValue ()
+        menuSetSpeed.menuCurrentSpeed.text = "当前: " + valuePlaySpeed
+    )
+
+    on menuSet14Speed picked do 
+    (
+        fnSetSpeed 1
+    )
+    on menuSet12Speed picked do
+    (
+        fnSetSpeed 2
+    )
+    on menuSet1Speed picked do 
+    (
+        fnSetSpeed 3
+    )
+    on menuSet2Speed picked do 
+    (
+        fnSetSpeed 4
+    )
+    on menuSet4Speed picked do 
+    (
+        fnSetSpeed 5
+    )
+)
+
+rcmenu menuSetFps
+(
+    menuItem menuCurrentFps "" enabled:false
+    menuItem menuSet60Fps "-- 60 Fps --"
+    menuItem menuSet30Fps "-- 30 Fps --"
+    menuItem menuSet24Fps "-- 24 Fps --"
+    separator menuSepCustom
+    menuItem menuCustomFps "自定义帧率"
+
+    on menuSetFps open do 
+    (
+        menuSetFps.menuCurrentFps.text = strCurrentFps
+    )
+
+    on menuSet60Fps picked do 
+    (
+        fnSetFps 60
+    )
+    on menuSet30Fps picked do
+    (
+        fnSetFps 30
+    )
+    on menuSet24Fps picked do 
+    (
+        fnSetFps 24
+    )
+
+    on menuCustomFps picked do
+    (
+        try (destroyDialog rolCustomFps) catch()
+        createdialog rolCustomFps 120 55 fgcolor:(color 255 20 147)
+    )
+)
+
 rollout rolloutLit "快捷操作"
 (
 	local btnTipsSize = 26
@@ -625,14 +706,14 @@ rollout rolloutLit "快捷操作"
 
 	HyperLink lnkTips "( 右键图标功能提示 )" pos:[1,3] width:BStools.width color:(color 255 20 147) hovercolor:(color 255 0 255) visitedcolor:(color 255 20 147) address:"https://space.bilibili.com/2031113"
 	
-	button btnReset " " images:#("UVWUnwrapModes_16i.bmp","UVWUnwrapModes_16i.bmp",28,3,3,3,3) pos:(fnRolLitBtnPos 1 1) width:btnTipsSize height:btnTipsSize toolTip:"静默重置场景"
-	button btnTipsIsolate "" images:#("UVWUnwrapView_16i.bmp","UVWUnwrapView_16i.bmp",27,15,15,15,15) pos:(fnRolLitBtnPos 2 1)  width:btnTipsSize height:btnTipsSize toolTip:"单独显示选中物体"
-	button btnSetFps " " images:#("TimePanel_16i.bmp","TimePanel_16i.bmp",28,19,19,19,19) pos:(fnRolLitBtnPos 3 1) width:btnTipsSize height:btnTipsSize toolTip:"设置帧率"
-	button btnSetPlaySpeed " " images:#("bip_mixer_i.bmp","bip_mixer_i.bmp",20,11,11,11,11) pos:(fnRolLitBtnPos 4 1) width:btnTipsSize height:btnTipsSize toolTip:""
-	button btnTips4 " " pos:(fnRolLitBtnPos 1 2) width:btnTipsSize height:btnTipsSize toolTip:"播放速度"
-	button btnTips5 " " pos:(fnRolLitBtnPos 2 2) width:btnTipsSize height:btnTipsSize toolTip:"播放速度"
-	button btnTips6 " " pos:(fnRolLitBtnPos 3 2) width:btnTipsSize height:btnTipsSize toolTip:"播放速度"
-	button btnTips7 " " pos:(fnRolLitBtnPos 4 2) width:btnTipsSize height:btnTipsSize toolTip:"播放速度"
+	button btnReset " " pos:(fnRolLitBtnPos 1 1) width:btnTipsSize height:btnTipsSize toolTip:"静默重置场景"
+	button btnTipsIsolate "" pos:(fnRolLitBtnPos 2 1)  width:btnTipsSize height:btnTipsSize toolTip:"单独显示选中物体"
+	button btnSetFps " " pos:(fnRolLitBtnPos 3 1) width:btnTipsSize height:btnTipsSize toolTip:"设置帧率"
+	button btnSetPlaySpeed " " pos:(fnRolLitBtnPos 4 1) width:btnTipsSize height:btnTipsSize toolTip:"设置播放速度"
+	button btnTips4 " " pos:(fnRolLitBtnPos 1 2) width:btnTipsSize height:btnTipsSize toolTip:" "
+	button btnTips5 " " pos:(fnRolLitBtnPos 2 2) width:btnTipsSize height:btnTipsSize toolTip:" "
+	button btnTips6 " " pos:(fnRolLitBtnPos 3 2) width:btnTipsSize height:btnTipsSize toolTip:" "
+	button btnTips7 " " pos:(fnRolLitBtnPos 4 2) width:btnTipsSize height:btnTipsSize toolTip:" "
 	button btnTips8 " " pos:(fnRolLitBtnPos 1 3) width:btnTipsSize height:btnTipsSize toolTip:" "
 	button btnTips9 " " pos:(fnRolLitBtnPos 2 3) width:btnTipsSize height:btnTipsSize toolTip:" "
 	button btnTips10 " " pos:(fnRolLitBtnPos 3 3) width:btnTipsSize height:btnTipsSize toolTip:" "
@@ -650,6 +731,14 @@ rollout rolloutLit "快捷操作"
 	button btnTips22 " " pos:(fnRolLitBtnPos 3 6) width:btnTipsSize height:btnTipsSize toolTip:" "
 	button btnTips23 " " pos:(fnRolLitBtnPos 4 6) width:btnTipsSize height:btnTipsSize toolTip:" "
 	
+	on rolloutLit open do ----------------给按钮附加图片
+	(
+		btnReset.images = #("UVWUnwrapModes_24i.bmp","UVWUnwrapModes_24i.bmp",28,3,3,3,3,true,false)
+		btnTipsIsolate.images = #("UVWUnwrapView_24i.bmp","UVWUnwrapView_24i.bmp",27,15,15,15,15,true,false) 
+		btnSetFps.images = #("VCRControls_24i.bmp","VCRControls_24i.bmp",28,19,19,19,19,true,true) 
+		btnSetPlaySpeed.images = #("VCRControls_24i.bmp","VCRControls_24i.bmp",28,11,11,11,11,true,true) 
+	)
+
 	on lnkTips rightClick do popupMenu menuBStoolsSetting  --弹出设置菜单
 	
 	on btnReset pressed do (resetMaxFile #noPrompt;max tool maximize)  --静默重置场景
@@ -660,13 +749,11 @@ rollout rolloutLit "快捷操作"
 
 	on btnSetFps pressed do 
 	(
-		FileIn (pathLitScripts + "\\fnSetFps.ms")
 		popupMenu menuSetFps
 	)
 
 	on btnSetPlaySpeed pressed do 
 	(
-		FileIn (pathLitScripts + "\\fnSetPlaybackSpeed.ms")
 		popupMenu menuSetSpeed
 	)
 )

@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-09-28 11:48:53
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-10-02 00:42:09
+ * @LastEditTime: 2019-10-09 21:52:25
  * @Email: animator.bullet@foxmail.com
  */
 -- getKeyTime $.rotation.controller 1
@@ -52,7 +52,7 @@ fn fnSetConfig =  --保存参数,脚本位置
 	SetINISetting BulletConfig "BulletKeyToolsSet"  "Pos" (iniPos as string)
 )
 
-rollout rolloutBulletKeyTools "关键小帧工具 v0.4" width:175 height:130
+rollout rolloutBulletKeyTools "关键小帧工具 v0.5" width:175 height:130
 (
 	-- group "移动帧数"
 	-- (
@@ -66,20 +66,20 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.4" width:175 height:130
 		edittext edtSliderTime " 定位帧数"  pos:[10,18] width:55 usePercentageWidth:true percentageWidth:44.0 labelOnTop:true text:(sliderTime as string) bold:true readOnly:false
 -- 		button btnMoveBeforeKeys " " images:#("VCRControls_24i.bmp","VCRControls_24i.bmp",28,3,3,3,3) \
 -- 		pos:[12,75] toolTip:"移动滑条前面关键帧" border:false
-		button btnSelBeforeKeys " " images:#("VCRControls_24i.bmp","VCRControls_24i.bmp",28,3,3,3,3) \
-		pos:[75,25] width:30 toolTip:"选择滑条前面关键帧" border:false
-		button btnSelAfterKeys " " images:#("VCRControls_24i.bmp","VCRControls_24i.bmp",28,11,11,11,11) \
-		pos:[135,25] width:30 toolTip:"选择滑条后面关键帧" border:false
+		button btnSelBeforeKeys " " \
+		pos:[75,25] width:30 height:30 toolTip:"选择滑条前面关键帧" border:false
+		button btnSelAfterKeys " " \
+		pos:[135,25] width:30 height:30 toolTip:"选择滑条后面关键帧" border:false
 -- 		button btnMoveAfterKeys " " images:#("VCRControls_24i.bmp","VCRControls_24i.bmp",28,11,11,11,11) \
 -- 		pos:[178,75] toolTip:"移动滑条后面关键帧" border:false
-		button btnSelAllKeys " " images:#("VCRControls_24i.bmp","VCRControls_24i.bmp",28,26,26,26,26) \
-		pos:[105,25] width:30 toolTip:"选择所有关键帧" border:false
+		button btnSelAllKeys " " \
+		pos:[105,25] width:30 height:30 toolTip:"选择所有关键帧" border:false
 		button btnClearSelKeys "清除帧选择" pos:[10,60] tooltip:"清除关键帧选择 (非删除帧)"
 		button btnToKeysRange "首尾帧范围" pos:[90,60] tooltip:"帧范围变成选中或全部物体首尾帧\r\n小心无限帧~ 后果未知..."
 	)
 	label labTips "---- 处理选中, 未选择即全部 ---" \
 	pos:[5,90] style_sunkenedge:true height:35 width:165
-	HyperLink lnkLink "--- [ Author: Bullet.S  2019.09 ]---" pos:[7,107] width:160 color:(color 148 0 211) hovercolor:(color 255 0 255) visitedcolor:(color 46 139 87) address:"https://space.bilibili.com/2031113"
+	HyperLink lnkLink "--- [ Author: Bullet.S  2019.09 ]---" pos:[7,107] width:160 color:(color 255 20 147) hovercolor:(color 255 0 255) visitedcolor:(color 255 20 147) address:"https://space.bilibili.com/2031113"
 
 	fn fnCollectKeys = ---------收集关键帧
 	(
@@ -245,6 +245,10 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.4" width:175 height:130
 		
 	on rolloutBulletKeyTools open do  ----打开脚本时操作
 	(
+		btnSelBeforeKeys.images = #("VCRControls_24i.bmp","VCRControls_24i.bmp",28,3,3,3,3,true,true) 
+		btnSelAfterKeys.images = #("VCRControls_24i.bmp","VCRControls_24i.bmp",28,11,11,11,11,true,true) 
+		btnSelAllKeys.images = #("VCRControls_24i.bmp","VCRControls_24i.bmp",28,26,26,26,26,true,true) 
+
 		-- iniPos = (GetDialogPos rolloutBulletKeyTools) 
 		fnSaveConfig ()  ---------------脚本位置赋值
 		fnSetConfig ()  ----------------保存位置信息到ini文件
@@ -460,5 +464,5 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.4" width:175 height:130
 		)
 	)
 )
-Createdialog rolloutBulletKeyTools fgcolor:(color 148 0 211) pos:iniPos
+Createdialog rolloutBulletKeyTools fgcolor:(color 255 20 147) pos:iniPos
 clearListener()  ---------清除侦听器
