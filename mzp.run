@@ -5,6 +5,7 @@ version 0.6
 extract to $temp
 
 treeMove "BulletS" to "$scripts"
+treeMove "BulletScripts" to "$scripts"
 treeMove "DTools" to "$scripts"
 
 run "runBulletTools.mse"

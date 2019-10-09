@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-08-03 17:36:21
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-10-08 14:03:38
+ * @LastEditTime: 2019-10-09 13:48:37
  * @Email: animator.bullet@foxmail.com
  */
 
@@ -202,6 +202,10 @@ fn fnUninst = --卸载方法(待补充)
 		(
 			deleteFile pathScripts
 		)
+		if (doesfileexist pathLitScripts == true) then
+		(
+			deleteFile pathLitScripts
+		)
 		if (doesfileexist BulletConfig == true) then
 		(
 			deleteFile BulletConfig
@@ -221,7 +225,7 @@ fn fnUninst = --卸载方法(待补充)
 		
 		if (shellLaunch "explorer.exe" (getDir #scripts)) then
 		(
-			messagebox "BulletTools工具已删除卸载,\r\n重新安装需要原mzp拖入...\r\n也可能由于权限原因,\r\n需手动删除打开窗口下的\r\n\"BulletS\"文件夹~\r\n\r\n"
+			messagebox "BulletTools工具已删除卸载,\r\n\r\n重新安装需要原mzp拖入...\r\n\r\n也可能由于权限原因,\r\n\r\n需手动删除打开窗口下的\r\n\r\n\"BulletS\"和\"BulletScripts\"文件夹~\r\n\r\n"
 		)
 	)
 	else if ( result == dialogResult.No ) then
@@ -612,6 +616,7 @@ rollout rolloutLit "快捷操作"
 (
 	local btnTipsSize = 26
 	local btnPos
+	local strCurrentFps = "当前帧率: " + framerate as string + " FPS"
 
 	fn fnRolLitBtnPos numL numB =
 	(
@@ -620,10 +625,10 @@ rollout rolloutLit "快捷操作"
 
 	HyperLink lnkTips "( 右键图标功能提示 )" pos:[1,3] width:BStools.width color:(color 255 20 147) hovercolor:(color 255 0 255) visitedcolor:(color 255 20 147) address:"https://space.bilibili.com/2031113"
 	
-	button btnReset " " images:#("UVWUnwrapModes_24i.bmp","UVWUnwrapModes_24i.bmp",28,3,3,3,3) pos:(fnRolLitBtnPos 1 1) width:btnTipsSize height:btnTipsSize toolTip:"静默重置场景"
-	button btnTipsIsolate "" images:#("UVWUnwrapView_24i.bmp","UVWUnwrapView_24i.bmp",27,15,15,15,15) pos:(fnRolLitBtnPos 2 1)  width:btnTipsSize height:btnTipsSize toolTip:"单独显示选中物体"
-	button btnSetFps " " pos:(fnRolLitBtnPos 3 1) width:btnTipsSize height:btnTipsSize toolTip:"设置帧率"
-	button btnTips3 " " pos:(fnRolLitBtnPos 4 1) width:btnTipsSize height:btnTipsSize toolTip:""
+	button btnReset " " images:#("UVWUnwrapModes_16i.bmp","UVWUnwrapModes_16i.bmp",28,3,3,3,3) pos:(fnRolLitBtnPos 1 1) width:btnTipsSize height:btnTipsSize toolTip:"静默重置场景"
+	button btnTipsIsolate "" images:#("UVWUnwrapView_16i.bmp","UVWUnwrapView_16i.bmp",27,15,15,15,15) pos:(fnRolLitBtnPos 2 1)  width:btnTipsSize height:btnTipsSize toolTip:"单独显示选中物体"
+	button btnSetFps " " images:#("TimePanel_16i.bmp","TimePanel_16i.bmp",28,19,19,19,19) pos:(fnRolLitBtnPos 3 1) width:btnTipsSize height:btnTipsSize toolTip:"设置帧率"
+	button btnSetPlaySpeed " " images:#("bip_mixer_i.bmp","bip_mixer_i.bmp",20,11,11,11,11) pos:(fnRolLitBtnPos 4 1) width:btnTipsSize height:btnTipsSize toolTip:""
 	button btnTips4 " " pos:(fnRolLitBtnPos 1 2) width:btnTipsSize height:btnTipsSize toolTip:"播放速度"
 	button btnTips5 " " pos:(fnRolLitBtnPos 2 2) width:btnTipsSize height:btnTipsSize toolTip:"播放速度"
 	button btnTips6 " " pos:(fnRolLitBtnPos 3 2) width:btnTipsSize height:btnTipsSize toolTip:"播放速度"
@@ -655,8 +660,14 @@ rollout rolloutLit "快捷操作"
 
 	on btnSetFps pressed do 
 	(
-		FileIn ("@" + pathLitScripts + "\\fnSetFps.ms")
+		FileIn (pathLitScripts + "\\fnSetFps.ms")
 		popupMenu menuSetFps
+	)
+
+	on btnSetPlaySpeed pressed do 
+	(
+		FileIn (pathLitScripts + "\\fnSetPlaybackSpeed.ms")
+		popupMenu menuSetSpeed
 	)
 )
 CreateDialog BStools pos:iniPos style:#(#style_titlebar)
