@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-10-10 13:03:15
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-10-10 14:30:55
+ * @LastEditTime: 2019-10-12 16:12:14
  * @Email: animator.bullet@foxmail.com
  */
 fn makeMacroKBD name category char shift:off ctrl:off alt:off =
@@ -53,8 +53,7 @@ fn addMacroKBD name category char shift:off ctrl:off alt:off file: check:on =
 		ss = if new then createfile file else openFile file mode:"a+"
 		if ss != undefined do
 		(
-			format "%
-" str to:ss
+			format "%" str to:ss
 			flush ss
 			close ss
 			act = #added
@@ -68,3 +67,76 @@ fn addMacroKBD name category char shift:off ctrl:off alt:off file: check:on =
 	)
 	act
 )
+
+
+-----备份----------------------------------
+fn makeMacroKBD name category char shift:off ctrl:off alt:off =
+(
+	local ss = stringstream ""
+	local kb = 3
+	if shift do kb = bit.set kb 3 on
+	if ctrl do kb = bit.set kb 4 on
+	if alt do kb = bit.set kb 5 on
+	
+	format "    <shortcut fVirt=\"%\" accleleratorKey=\"%\" actionID=\"%`%\" actionTableID=\"647394\"" kb (bit.charasint (toUpper char)) name category to:ss
+	ss as string
+)
+fn isTakenKBD char shift:off ctrl:off alt:off file: macrosOnly:on =
+(
+	local act
+	local ch = (bit.charasint (toUpper char))
+	local kb = 3
+	if shift do kb = bit.set kb 3 on
+	if ctrl do kb = bit.set kb 4 on
+	if alt do kb = bit.set kb 5 on
+		
+	if file == unsupplied do file = actionMan.getKeyboardFile()
+	if (ss = openfile file) != undefined do
+	(
+		skipToString ss "shortcut"
+		while not eof ss and act == undefined do
+		(
+			sss = readline ss
+			str = filterstring sss "=\""
+			if str.count >= 4 then
+			(
+				k = str[2] as integer
+				c = str[4] as integer
+				i = str[str.count - 1] as integer
+				if k == kb and c == ch and (not macrosOnly or i == 647394) then act = on else (skipToString ss "shortcut") 
+			)
+		)
+		close ss
+		if act == undefined do act = off
+	)		
+	act
+)
+fn addMacroKBD name category char shift:off ctrl:off alt:off file: check:on = 
+(
+	local act = #failed, taken = off
+	if file == unsupplied do file = actionMan.getKeyboardFile()
+	if (new = not doesfileexist file) or not check or (isTakenKBD char shift:shift ctrl:ctrl alt:alt file:file) != true then
+	(
+		str = makeMacroKBD name category char shift:shift ctrl:ctrl alt:alt
+		print str
+		ss = if new then createfile file else openFile file mode:"r+"
+		if ss != undefined do
+		(
+			format "%" str to:ss
+			flush ss
+			close ss
+			act = #added
+		)
+	)
+	else act = #taken
+	if act == #added do
+	(
+		actionMan.loadKeyboardFile file
+		actionMan.saveKeyboardFile file
+	)
+	act
+)
+
+addMacroKBD "StartBippy" "BIPPY" "D" shift:on ctrl:on alt:off
+
+-- removeAction

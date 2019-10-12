@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-10-10 13:03:15
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-10-10 22:49:56
+ * @LastEditTime: 2019-10-12 16:12:37
  * @Email: animator.bullet@foxmail.com
  */
 
@@ -15,9 +15,10 @@ fn getKeyMacroKBD name category file: =
     if file == unsupplied do file = actionMan.getKeyboardFile()
     if (ss = openfile file) != undefined do
     (
-        a = skipToString ss "shortcut"
-        if a as string == "OK" do
-        (
+        -- a = skipToString ss "shortcut"
+        skipToString ss "shortcut"
+        -- if a as string == "OK" do
+        -- (
             while not eof ss do
             (
                 str = readline ss
@@ -30,15 +31,28 @@ fn getKeyMacroKBD name category file: =
                     if matchpattern str pattern:pattern do
                     (
                         ch = toUpper (bit.intaschar c)
-                        if bit.get k 5 do ch = "ALT+" + ch 
                         if bit.get k 4 do ch = "CTRL+" + ch 
                         if bit.get k 3 do ch = "SHIFT+" + ch 
+						if bit.get k 5 do ch = "ALT+" + ch 
                         append hots ch
                     )
                 )
             )
-        )
+        -- )
         close ss
     )		
     hots
 )
+
+
+----------方法备份------------------------------
+tagetfile = "C:\Users\chao.liu\AppData\Local\Autodesk\3dsMax\2020 - 64bit\ENU\en-US\UI\MaxStartUI11.kbdx"
+ss = openFile tagetfile mode:"r+"
+skipToString ss "StartBippy"
+--lineNum = filepos ss
+--lineNum -= 68
+--seek ss lineNum
+readline ss
+-- format "%" "bbbbb" to:ss
+flush ss
+close ss
