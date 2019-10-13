@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-08-03 17:36:21
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-10-09 21:59:46
+ * @LastEditTime: 2019-10-14 01:21:59
  * @Email: animator.bullet@foxmail.com
  */
 
@@ -28,7 +28,7 @@ Global iniStyle --样式保存记录
 Global iniPos  --位置保存记录
 Global iniSize  --记录窗口大小
 Global iniClassIn  --记录按下的脚本类别
-Global posBtn = [0,5]  --单个按钮位置,以此叠加
+Global posBtn = [3,5]  --单个按钮位置,以此叠加
 Global widthBtn = 55  --按钮长度
 Global heightBtn = 25  --按钮高度
 Global rolWidth = (widthBtn * 2 + 40)
@@ -544,8 +544,9 @@ rollout BStools ("BsTools" + ver) width:rolWidth height:iniSize[2]
 
 	on BStools open do -- 打开加载停靠位置,0=浮动,1=左,2=右
 	(
-		posBtn = [0,5]
+-- 		posBtn = [3,5]
 		fnRefreshIcons ()
+		fnRefreshList ()
 		fnSaveConfig ()
 		cui.RegisterDialogBar BStools  maxSize:[rolWidth,rolHeight]
 		fnUiStyle iniStyle
@@ -560,7 +561,7 @@ rollout BStools ("BsTools" + ver) width:rolWidth height:iniSize[2]
 	on btnDockL pressed do 
 	(
 		iniPos = (GetDialogPos BStools)
-		posBtn = [3,5]
+-- 		posBtn = [3,5]
 		if btnDockR.enabled == false then cui.unRegisterDialogBar BStools
 		BStools.height = rolHeight
 		BStools.width = rolWidth
@@ -571,7 +572,7 @@ rollout BStools ("BsTools" + ver) width:rolWidth height:iniSize[2]
 	on btnDockR pressed do 
 	(
 		iniPos = (GetDialogPos BStools)
-		posBtn = [3,5]
+-- 		posBtn = [3,5]
 		if btnDockL.enabled == false then cui.unRegisterDialogBar BStools
 		BStools.height = rolHeight
 		BStools.width = rolWidth
@@ -581,7 +582,7 @@ rollout BStools ("BsTools" + ver) width:rolWidth height:iniSize[2]
 
 	on btnUnDock pressed do 
 	(
-		posBtn = [3,5]
+-- 		posBtn = [3,5]
 		fnUiStyle 0;iniStyle = 0
 		BStools.width = rolWidth
 		BStools.height = 134 + BStools.BStoolsMain.height + BStools.BStoolsScripts.height + BStools.BStoolsTool.height + BStools.BStoolsLit.height
@@ -622,75 +623,75 @@ rollout rolloutTools "小工具"
 
 rcmenu menuSetSpeed
 (
-    menuItem menuCurrentSpeed "" enabled:false
-    menuItem menuSet14Speed "-- 1/4x --"
-    menuItem menuSet12Speed "-- 1/2x --"
-    separator menuSepSpeedLow
-    menuItem menuSet1Speed "--  1x  --"
-    separator menuSepSpeedHigh
-    menuItem menuSet2Speed "--  2x  --"
-    menuItem menuSet4Speed "--  4x  --"
+	menuItem menuCurrentSpeed "" enabled:false
+	menuItem menuSet14Speed "-- 1/4x --"
+	menuItem menuSet12Speed "-- 1/2x --"
+	separator menuSepSpeedLow
+	menuItem menuSet1Speed "--  1x  --"
+	separator menuSepSpeedHigh
+	menuItem menuSet2Speed "--  2x  --"
+	menuItem menuSet4Speed "--  4x  --"
 
-    on menuSetSpeed open do 
-    (
-        judgePlaySpeedValue ()
-        menuSetSpeed.menuCurrentSpeed.text = "当前: " + valuePlaySpeed
-    )
+	on menuSetSpeed open do 
+	(
+		judgePlaySpeedValue ()
+		menuSetSpeed.menuCurrentSpeed.text = "当前: " + valuePlaySpeed
+	)
 
-    on menuSet14Speed picked do 
-    (
-        fnSetSpeed 1
-    )
-    on menuSet12Speed picked do
-    (
-        fnSetSpeed 2
-    )
-    on menuSet1Speed picked do 
-    (
-        fnSetSpeed 3
-    )
-    on menuSet2Speed picked do 
-    (
-        fnSetSpeed 4
-    )
-    on menuSet4Speed picked do 
-    (
-        fnSetSpeed 5
-    )
+	on menuSet14Speed picked do 
+	(
+		fnSetSpeed 1
+	)
+	on menuSet12Speed picked do
+	(
+		fnSetSpeed 2
+	)
+	on menuSet1Speed picked do 
+	(
+		fnSetSpeed 3
+	)
+	on menuSet2Speed picked do 
+	(
+		fnSetSpeed 4
+	)
+	on menuSet4Speed picked do 
+	(
+		fnSetSpeed 5
+	)
 )
 
 rcmenu menuSetFps
 (
-    menuItem menuCurrentFps "" enabled:false
-    menuItem menuSet60Fps "-- 60 Fps --"
-    menuItem menuSet30Fps "-- 30 Fps --"
-    menuItem menuSet24Fps "-- 24 Fps --"
-    separator menuSepCustom
-    menuItem menuCustomFps "自定义帧率"
+	menuItem menuCurrentFps "" enabled:false
+	menuItem menuSet60Fps "-- 60 Fps --"
+	menuItem menuSet30Fps "-- 30 Fps --"
+	menuItem menuSet24Fps "-- 24 Fps --"
+	separator menuSepCustom
+	menuItem menuCustomFps "自定义帧率"
 
-    on menuSetFps open do 
-    (
-        menuSetFps.menuCurrentFps.text = strCurrentFps
-    )
+	on menuSetFps open do 
+	(
+		menuSetFps.menuCurrentFps.text = strCurrentFps
+	)
 
-    on menuSet60Fps picked do 
-    (
-        fnSetFps 60
-    )
-    on menuSet30Fps picked do
-    (
-        fnSetFps 30
-    )
-    on menuSet24Fps picked do 
-    (
-        fnSetFps 24
-    )
+	on menuSet60Fps picked do 
+	(
+		fnSetFps 60
+	)
+	on menuSet30Fps picked do
+	(
+		fnSetFps 30
+	)
+	on menuSet24Fps picked do 
+	(
+		fnSetFps 24
+	)
 
-    on menuCustomFps picked do
-    (
-        try (destroyDialog rolCustomFps) catch()
-        createdialog rolCustomFps 120 55 fgcolor:(color 255 20 147)
-    )
+	on menuCustomFps picked do
+	(
+		try (destroyDialog rolCustomFps) catch()
+		createdialog rolCustomFps 120 55 fgcolor:(color 255 20 147)
+	)
 )
 
 rollout rolloutLit "快捷操作"
@@ -701,10 +702,10 @@ rollout rolloutLit "快捷操作"
 
 	fn fnRolLitBtnPos numL numB =
 	(
-		btnPos = [(4 + (26 * (numL - 1))),(20 + (26 * (numB - 1)))]
+		btnPos = [(6 + (26 * (numL - 1))),(20 + (26 * (numB - 1)))]
 	)
 
-	HyperLink lnkTips "( 右键图标功能提示 )" pos:[1,3] width:BStools.width color:(color 255 20 147) hovercolor:(color 255 0 255) visitedcolor:(color 255 20 147) address:"https://space.bilibili.com/2031113"
+	HyperLink lnkTips "( 右键图标功能提示 )" pos:[3,3] width:BStools.width color:(color 255 20 147) hovercolor:(color 255 0 255) visitedcolor:(color 255 20 147) address:"https://space.bilibili.com/2031113"
 	
 	button btnReset " " pos:(fnRolLitBtnPos 1 1) width:btnTipsSize height:btnTipsSize toolTip:"静默重置场景"
 	button btnTipsIsolate "" pos:(fnRolLitBtnPos 2 1)  width:btnTipsSize height:btnTipsSize toolTip:"单独显示选中物体"
