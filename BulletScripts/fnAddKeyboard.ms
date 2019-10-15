@@ -3,10 +3,11 @@
  * @Author: Bullet.S
  * @Date: 2019-10-10 13:03:15
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-10-12 16:12:14
+ * @LastEditTime: 2019-10-15 19:24:40
  * @Email: animator.bullet@foxmail.com
  */
-fn makeMacroKBD name category char shift:off ctrl:off alt:off =
+
+fn makeMacroKBD nameKBD category char shift:off ctrl:off alt:off =
 (
 	local ss = stringstream ""
 	local kb = 3
@@ -14,71 +15,7 @@ fn makeMacroKBD name category char shift:off ctrl:off alt:off =
 	if ctrl do kb = bit.set kb 4 on
 	if alt do kb = bit.set kb 5 on
 	
-	format "-1=% % %`% 647394" kb (bit.charasint (toUpper char)) name category to:ss
-	ss as string
-)
-fn isTakenKBD char shift:off ctrl:off alt:off file: macrosOnly:on =
-(
-	local act
-	local ch = (bit.charasint (toUpper char))
-	local kb = 3
-	if shift do kb = bit.set kb 3 on
-	if ctrl do kb = bit.set kb 4 on
-	if alt do kb = bit.set kb 5 on
-		
-	if file == unsupplied do file = actionMan.getKeyboardFile()
-	if (ss = openfile file) != undefined do
-	(
-		skipToString ss "=" 
-		while not eof ss and act == undefined do
-		(
-			str = filterstring (readline ss) " "
-			k = execute str[1]
-			c = execute str[2]
-			i = execute str[str.count]
-			if k == kb and c == ch and (not macrosOnly or i == 647394) then act = on else (skipToString ss "=") 
-		)
-		close ss
-		if act == undefined do act = off
-	)		
-	act
-)
-fn addMacroKBD name category char shift:off ctrl:off alt:off file: check:on = 
-(
-	local act = #failed, taken = off
-	if file == unsupplied do file = actionMan.getKeyboardFile()
-	if (new = not doesfileexist file) or not check or (isTakenKBD char shift:shift ctrl:ctrl alt:alt file:file) != true then
-	(
-		str = makeMacroKBD name category char shift:shift ctrl:ctrl alt:alt
-		ss = if new then createfile file else openFile file mode:"a+"
-		if ss != undefined do
-		(
-			format "%" str to:ss
-			flush ss
-			close ss
-			act = #added
-		)
-	)
-	else act = #taken
-	if act == #added do
-	(
-		actionMan.loadKeyboardFile file
-		actionMan.saveKeyboardFile file
-	)
-	act
-)
-
-
------备份----------------------------------
-fn makeMacroKBD name category char shift:off ctrl:off alt:off =
-(
-	local ss = stringstream ""
-	local kb = 3
-	if shift do kb = bit.set kb 3 on
-	if ctrl do kb = bit.set kb 4 on
-	if alt do kb = bit.set kb 5 on
-	
-	format "    <shortcut fVirt=\"%\" accleleratorKey=\"%\" actionID=\"%`%\" actionTableID=\"647394\"" kb (bit.charasint (toUpper char)) name category to:ss
+	format "    <shortcut fVirt=\"%\" accleleratorKey=\"%\" actionID=\"%`%\" actionTableID=\"647394\" />" kb (bit.charasint (toUpper char)) nameKBD category to:ss
 	ss as string
 )
 fn isTakenKBD char shift:off ctrl:off alt:off file: macrosOnly:on =
@@ -111,18 +48,45 @@ fn isTakenKBD char shift:off ctrl:off alt:off file: macrosOnly:on =
 	)		
 	act
 )
-fn addMacroKBD name category char shift:off ctrl:off alt:off file: check:on = 
+fn addMacroKBD nameKBD category char shift:off ctrl:off alt:off file: check:on = 
 (
+	local linesAll = #()
+	local tempFile
 	local act = #failed, taken = off
-	if file == unsupplied do file = actionMan.getKeyboardFile()
-	if (new = not doesfileexist file) or not check or (isTakenKBD char shift:shift ctrl:ctrl alt:alt file:file) != true then
+	local linenum = 1
+	local n = 1
+	if file == unsupplied do 
 	(
-		str = makeMacroKBD name category char shift:shift ctrl:ctrl alt:alt
+		file = actionMan.getKeyboardFile()
+		tempFile = (getFileNamePath file) + "temp.kbdx"
+	)
+
+	if (new = not doesfileexist tempFile) or not check or (isTakenKBD char shift:shift ctrl:ctrl alt:alt file:nameKBD) != true then
+	(
+		str = makeMacroKBD nameKBD category char shift:shift ctrl:ctrl alt:alt
 		print str
-		ss = if new then createfile file else openFile file mode:"r+"
+		ss = if new then (copyfile file tempFile) else openFile tempFile mode:"r+"
+		linesAll = (dotNetClass "System.IO.File").ReadAllLines tempFile
 		if ss != undefined do
 		(
-			format "%" str to:ss
+			linenum = 1
+			n = 1
+			-- format "%" str to:ss
+			for i = 1 to linesAll.count do
+			(
+		-- 		nameKBD = "*StartBippy*"
+				if matchpattern linesAll[i] pattern:("*" + nameKBD + "*") then
+				(
+					lineNum = n
+				)
+				else
+				(
+					n += 1
+				)
+			)
+			deleteItem linesAll lineNum
+			insertItem str linesAll lineNum
+			(dotNetClass "System.IO.File").WriteAllLines tempFile linesAll
 			flush ss
 			close ss
 			act = #added
@@ -131,12 +95,42 @@ fn addMacroKBD name category char shift:off ctrl:off alt:off file: check:on =
 	else act = #taken
 	if act == #added do
 	(
-		actionMan.loadKeyboardFile file
+		actionMan.loadKeyboardFile tempFile
 		actionMan.saveKeyboardFile file
 	)
 	act
 )
 
-addMacroKBD "StartBippy" "BIPPY" "D" shift:on ctrl:on alt:off
 
--- removeAction
+-- fn deleteLine nameKBD linenum = 
+-- (
+-- 	local fileKBD = actionMan.getKeyboardFile()
+-- 	local linesAll = (dotNetClass "System.IO.File").ReadAllLines fileKBD
+-- 	local n = 1
+-- 	for i = 1 to linesAll.count do
+-- 	(
+-- -- 		nameKBD = "*StartBippy*"
+-- 		if matchpattern linesAll[i] pattern:nameKBD then
+-- 		(
+-- 			lineNum = n
+-- 		)
+-- 		else
+-- 		(
+-- 			n += 1
+-- 		)
+-- 	)
+-- 	deleteItem linesAll lineNum
+-- 	(dotNetClass "System.IO.File").WriteAllLines fileKBD linesAll
+-- )
+-- deleteLine "*StartBippy*" lineNum
+
+
+-- addMacroKBD "StartBippy" "BIPPY" "D" shift:on ctrl:on alt:off
+
+-- -- removeAction
+-- fn deleteLine fileKBD linenum = 
+-- (
+-- 	local linesAll = (dotNetClass "System.IO.File").ReadAllLines fileKBD
+-- 	deleteItem linesAll linenum
+-- 	(dotNetClass "System.IO.File").WriteAllLines fileKBD linesAll
+-- )

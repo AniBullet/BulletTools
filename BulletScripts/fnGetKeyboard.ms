@@ -3,13 +3,14 @@
  * @Author: Bullet.S
  * @Date: 2019-10-10 13:03:15
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-10-12 16:12:37
+ * @LastEditTime: 2019-10-14 22:10:33
  * @Email: animator.bullet@foxmail.com
  */
+global lineNum = 2
 
-fn getKeyMacroKBD name category file: =
+fn getKeyMacroKBD nameKBD categoryKBD file: =
 (
-    local pattern = "*" + name + "`" + category + "*" + "647394" + "*"
+    local pattern = "*" + nameKBD + "`" + categoryKBD + "*" + "647394" + "*"
     local hots = #()
         
     if file == unsupplied do file = actionMan.getKeyboardFile()
@@ -43,16 +44,16 @@ fn getKeyMacroKBD name category file: =
     )		
     hots
 )
+-- -- getKeyMacroKBD "StartBippy" "BIPPY"
 
-
-----------方法备份------------------------------
-tagetfile = "C:\Users\chao.liu\AppData\Local\Autodesk\3dsMax\2020 - 64bit\ENU\en-US\UI\MaxStartUI11.kbdx"
-ss = openFile tagetfile mode:"r+"
-skipToString ss "StartBippy"
---lineNum = filepos ss
---lineNum -= 68
---seek ss lineNum
-readline ss
--- format "%" "bbbbb" to:ss
-flush ss
-close ss
+-- ----------方法备份------------------------------
+-- tagetfile = "C:\Users\chao.liu\AppData\Local\Autodesk\3dsMax\2020 - 64bit\ENU\en-US\UI\MaxStartUI11.kbdx"
+-- ss = openFile tagetfile mode:"r+"
+-- skipToString ss "StartBippy"
+-- --lineNum = filepos ss
+-- --lineNum -= 68
+-- --seek ss lineNum
+-- readline ss
+-- -- format "%" "bbbbb" to:ss
+-- flush ss
+-- close ss

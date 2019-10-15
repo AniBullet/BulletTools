@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-08-18 22:17:43
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-10-09 13:57:02
+ * @LastEditTime: 2019-10-14 11:59:18
  * @Email: animator.bullet@foxmail.com
  */
 
@@ -187,7 +187,7 @@ rollout mzpDialog " BulletTools 安装工具 "
 		fileIn ((getDir #userMacros)+"\\"+theMacroFile)
 		--update the interface
 		local theArray = fn_checkScriptFilePresence()
-		local myMessage = "工具安装成功. 你可以在\r\n \"Customize\" -- \"Customize user interface...\" -- \"Toolbars\" -- \"[BulletTools]\" Category (最下) \r\n中找到,并拖到工具栏~"
+		local myMessage = "工具安装成功. 你可以在\r\n \"Customize\" -- \"Customize user interface...\" -- \"Toolbars\" -- \"_[BulletTools]\" Category (最上) \r\n中找到,并拖到工具栏~"
 		fn_updateInterface tbxResult myMessage theArray btnRemove
 		FileIn ((getDir #startupScripts) + "\\" + "BulletTools.mse")
 	)
