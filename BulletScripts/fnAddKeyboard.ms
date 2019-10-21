@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-10-10 13:03:15
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-10-15 19:24:40
+ * @LastEditTime: 2019-10-21 22:02:05
  * @Email: animator.bullet@foxmail.com
  */
 
@@ -51,24 +51,27 @@ fn isTakenKBD char shift:off ctrl:off alt:off file: macrosOnly:on =
 fn addMacroKBD nameKBD category char shift:off ctrl:off alt:off file: check:on = 
 (
 	local linesAll = #()
-	local tempFile
-	local act = #failed, taken = off
+	-- local tempFile
+	local act = #failed
+	local taken = off
 	local linenum = 1
 	local n = 1
 	if file == unsupplied do 
 	(
 		file = actionMan.getKeyboardFile()
-		tempFile = (getFileNamePath file) + "temp.kbdx"
+		-- tempFile = (getFileNamePath file) + "temp.kbdx"
 	)
 
-	if (new = not doesfileexist tempFile) or not check or (isTakenKBD char shift:shift ctrl:ctrl alt:alt file:nameKBD) != true then
+	if (new = not doesfileexist file) or not check or (isTakenKBD char shift:shift ctrl:ctrl alt:alt file:file) != true then
 	(
 		str = makeMacroKBD nameKBD category char shift:shift ctrl:ctrl alt:alt
 		print str
-		ss = if new then (copyfile file tempFile) else openFile tempFile mode:"r+"
-		linesAll = (dotNetClass "System.IO.File").ReadAllLines tempFile
+		ss = if new then (createfile file) else openFile file mode:"r+"
 		if ss != undefined do
 		(
+			flush ss
+			close ss
+			linesAll = (dotNetClass "System.IO.File").ReadAllLines file
 			linenum = 1
 			n = 1
 			-- format "%" str to:ss
@@ -86,8 +89,8 @@ fn addMacroKBD nameKBD category char shift:off ctrl:off alt:off file: check:on =
 			)
 			deleteItem linesAll lineNum
 			insertItem str linesAll lineNum
-			(dotNetClass "System.IO.File").WriteAllLines tempFile linesAll
-			flush ss
+			(dotNetClass "System.IO.File").WriteAllLines file linesAll
+-- 			flush ss
 			close ss
 			act = #added
 		)
@@ -95,7 +98,7 @@ fn addMacroKBD nameKBD category char shift:off ctrl:off alt:off file: check:on =
 	else act = #taken
 	if act == #added do
 	(
-		actionMan.loadKeyboardFile tempFile
+		actionMan.loadKeyboardFile file
 		actionMan.saveKeyboardFile file
 	)
 	act
