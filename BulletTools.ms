@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-08-03 17:36:21
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-10-16 18:20:54
+ * @LastEditTime: 2019-10-22 13:15:49
  * @Email: animator.bullet@foxmail.com
  */
 
@@ -13,7 +13,7 @@ try (destroyDialog BStools) catch()
 Global mouPosX = mouse.screenpos.x  
 Global mouPosY = mouse.screenpos.y  --获取鼠标位置
 
-Global ver = " v0.6  ---- ✪*6"
+Global ver = " v0.6  --- 4869"
 
 Global pathScripts = ((getDir #scripts) + "\\BulletS")
 Global BulletConfig = ((getDir #scripts) + "\\BulletConfig.ini")  --配置文件路径
@@ -217,13 +217,13 @@ fn fnUninst = --卸载方法(待补充)
 		(
 			deleteFile BulletConfig
 		)
-		if (doesfileexist ((getDir #StartupScripts) + "\\BulletTools.mse") == true) then
+		if (doesfileexist ((getDir #StartupScripts) + "\\BulletTools.ms") == true) then
 		(
-			deleteFile ((getDir #StartupScripts) + "\\BulletTools.mse")
+			deleteFile ((getDir #StartupScripts) + "\\BulletTools.ms")
 		)
-		if (doesfileexist ((getDir #Scripts) + "\\BulletTools.mse") == true) then
+		if (doesfileexist ((getDir #Scripts) + "\\BulletTools.ms") == true) then
 		(
-			deleteFile ((getDir #Scripts) + "\\BulletTools.mse")
+			deleteFile ((getDir #Scripts) + "\\BulletTools.ms")
 		)
 		if (doesfileexist ((getDir #userMacros)+"\\BulletTools.mcr") == true) then
 		(
@@ -439,18 +439,18 @@ rcmenu menuBStoolsSetting --设置菜单
 	)
 	on menuNoAutorun picked do  --打开自定脚本目录
 	(
-		if (doesfileexist ((getDir #StartupScripts) + "\\BulletTools.mse") == true) then
+		if (doesfileexist ((getDir #StartupScripts) + "\\BulletTools.ms") == true) then
 		(
-			deleteFile ((getDir #StartupScripts) + "\\BulletTools.mse")
+			deleteFile ((getDir #StartupScripts) + "\\BulletTools.ms")
 			messagebox "------------------------------------------\r\n脚本自启已解除,\r\n但仍可点击工具栏按钮打开~\r\n\r\n"
 		)
 		else messagebox "-----------------------------------------\r\n已是非自启状态,无需再次操作~\r\n可点击\"打开自启\"选项打开自启~\r\n\r\n"
 	)
 	on menuAutorun picked do  --打开自定脚本目录
 	(
-		if (doesfileexist ((getDir #StartupScripts) + "\\BulletTools.mse") == false) then
+		if (doesfileexist ((getDir #StartupScripts) + "\\BulletTools.ms") == false) then
 		(
-			copyFile ((getDir #Scripts)+"\\BulletTools.mse") ((getDir #startupScripts)+"\\BulletTools.mse")
+			copyFile ((getDir #Scripts)+"\\BulletTools.ms") ((getDir #startupScripts)+"\\BulletTools.ms")
 			messagebox "-----------------------------------------\r\n脚本自启已打开,请安心享用~\r\n\r\n"
 		)
 		else messagebox "-----------------------------------------\r\n已是自启状态,无需再次操作~\r\n可点击\"解除自启\"选项解除自启\r\n\r\n"

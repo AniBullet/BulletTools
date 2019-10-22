@@ -8,8 +8,8 @@ treeMove "BulletS" to "$scripts"
 treeMove "BulletScripts" to "$scripts"
 treeMove "DTools" to "$scripts"
 
-run "runBulletTools.mse"
-drop "runBulletTools.mse"
+run "runBulletTools.ms"
+drop "runBulletTools.ms"
 
 clear temp on MAX exit
 clear temp on reset
