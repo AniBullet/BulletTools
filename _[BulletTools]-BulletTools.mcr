@@ -6,6 +6,6 @@ Icon:#("Systems",2)
 (
 	on execute do
 	(
-		fileIn ((getDir #Scripts)+"\\"+"BulletTools.mse")
+		fileIn ((getDir #Scripts)+"\\"+"BulletTools.ms")
 	)
 )
