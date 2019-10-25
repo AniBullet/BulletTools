@@ -1,3 +1,11 @@
+/*
+ * @Description: 
+ * @Author: Bullet.S
+ * @Date: 2019-10-09 21:29:04
+ * @LastEditors: Bullet.S
+ * @LastEditTime: 2019-10-25 19:21:57
+ * @Email: animator.bullet@foxmail.com
+ */
 
 
 Global arrKeysTime = #()
@@ -8,77 +16,126 @@ Global fnAddKyes
 Global fnSelectKeys
 Global fnSelLinkKeys
 
-fn fnCollectKeys = ---------收集关键帧
-(
-    arrKeysTime = #()
-    arrLinkKeys = #()
-    arrKeys = #() ----------------先清空数组
-
-    fn fnAddKyes tempObj =
-    (	
-        local numObjSubs
-        local numLinkSubs
-        local tempSubAnim
-        local tempController
-        local tempLinkObj
-        local tempLinkSubAnim
-        local tempLinkController
-        
-        if tempObj.controller != undefined then
+fn fnAddKyes tempObj Link:off =
+(	
+    local numObjSubs
+    local numLinkSubs
+    local tempSubAnim
+    local tempController
+    local tempLinkObj
+    local tempLinkSubAnim
+    local tempLinkController
+    
+    if tempObj.controller != undefined then
+    (
+        numObjSubs = tempObj.numSubs   ---------子动画数量
+        for n = 1 to numObjSubs do 
         (
-            numObjSubs = tempObj.numSubs   ---------子动画数量
-            for n = 1 to numObjSubs do 
+            tempSubAnim = GetSubAnim tempObj n
+            if tempSubAnim != undefined then
             (
-                tempSubAnim = GetSubAnim tempObj n
-                if tempSubAnim != undefined then
+                tempController = tempSubAnim.Controller
+                if (classof tempController != UndefinedClass) then
                 (
-                    tempController = tempSubAnim.Controller
-                    if ((classof tempController != UndefinedClass) and (classof tempController != Link_Constraint) and (classof tempController != LinkTimeControl)) then
+                    if (classof tempObj != Biped_Object) then
                     (
-                        if tempController != undefined then 
+                        if ((classof tempController != Link_Constraint) and (classof tempController != LinkTimeControl)) then
                         (
-                            if tempController.keys[1] != undefined then
+                            if tempController != undefined then 
                             (
-                                arrKeysTime += for i in tempController.keys collect i.time
+                                if tempController.keys[1] != undefined then
+                                (
+                                    -- arrKeysTime += for i in tempController.keys collect i.time
+                                    for i in tempController.keys do 
+                                    (
+                                        appendIfUnique arrKeysTime i.time
+                                    )
+-- 									print (n as string + ":" + arrKeysTime as string)
+                                )
+                            )
+                        )
+                        else
+                        (
+                            if Link == on then
+                            (
+                                tempLinkObj = tempController
+                                if tempLinkObj != undefined then
+                                (
+                                    numLinkSubs = tempLinkObj.numSubs
+                                    for n = 1 to numLinkSubs do
+                                    (
+                                        tempLinkSubAnim = GetSubAnim tempLinkObj n
+                                        for n = 1 to numLinkSubs do
+                                        (
+                                            tempLinkSubAnim = GetSubAnim tempLinkObj n
+                                            if (GetSubAnimName tempLinkObj n) == #Link_Times then
+                                            (
+                                                if tempLinkSubAnim.keys[1] != undefined then
+                                                (
+                                                    for i in tempLinkSubAnim.keys do 
+                                                    (
+                                                        appendIfUnique arrLinkKeys i
+                                                    )
+                                                )
+                                            )
+                                        )
+                                        if tempLinkSubAnim.numSubs > 0 do (fnAddKyes tempLinkSubAnim)
+                                    )
+                                )
+                            )
+                            -- else 
+                            -- (
+                            -- 	print "Link:off"
+                            -- )
+                        )
+                    )
+                    else 
+                    (
+                        if tempObj.controller != undefined then 
+                        (
+                            if tempObj.controller.keys[1] != undefined then
+                            (
+                                -- arrKeysTime += for i in tempController.keys collect i.time
+                                for i in tempObj.controller.keys do 
+                                (
+                                    append arrKeysTime i.time
+                                )
 -- 									print (n as string + ":" + arrKeysTime as string)
                             )
                         )
                     )
-                    else ----------------上面收集正常帧, 下面收集link帧
-                    (
-                        tempLinkObj = tempController
-                        if tempLinkObj != undefined then
-                        (
-                            numLinkSubs = tempLinkObj.numSubs
-                            for n = 1 to numLinkSubs do
-                            (
-                                tempLinkSubAnim = GetSubAnim tempLinkObj n
-                                for n = 1 to numLinkSubs do
-                                (
-                                    tempLinkSubAnim = GetSubAnim tempLinkObj n
-                                    if (GetSubAnimName tempLinkObj n) == #Link_Times then
-                                    (
-                                        if tempLinkSubAnim.keys[1] != undefined then
-                                        (
-                                            arrLinkKeys = tempLinkSubAnim.keys
-                                        )
-                                    )
-                                )
-                                if tempLinkSubAnim.numSubs > 0 do (fnAddKyes tempLinkSubAnim)
-                            )
-                        )
-                    )
-                )
-                if tempSubAnim.numSubs > 0 do (fnAddKyes tempSubAnim)  ----子动画递归
+                )----------------上面收集非biped的正常帧和收集link帧, 下面收集biped帧
+            )
+            if tempSubAnim.numSubs > 0 do (fnAddKyes tempSubAnim)  ----子动画递归
+        )
+    )
+)
+
+fn fnCollectKeys = ---------收集关键帧
+(
+    arrKeysTime = #()
+    arrBipedKeys = #() ----------------先清空数组
+    arrLinkKeys = #()
+    
+    case of  -----------处理选中,未选中则处理全部
+    (
+        (selection.count == 0):
+        (
+            for i in objects do 
+            (
+                if rolloutBulletKeyTools.btnJudgeLinkKey.checked == false then fnAddKyes i
+                else fnAddKyes i link:on
+            )
+        )
+        default:(
+            for i in selection do 
+            (
+                if rolloutBulletKeyTools.btnJudgeLinkKey.checked == false then fnAddKyes i
+                else fnAddKyes i link:on
             )
         )
     )
-    case of  -----------处理选中,未选中则处理全部
-    (
-        (selection.count == 0):(for i in objects do fnAddKyes i)
-        default:(for i in selection do fnAddKyes i)
-    )
-    arrKeysTime = makeUniqueArray arrKeysTime  ---去除重复帧数
+    -- arrKeysTime = makeUniqueArray arrKeysTime  ---去除重复帧数
     sort arrKeysTime  ----帧数排序
     if ((arrKeysTime.count != 0) and (arrKeysTime.count > 1)) then
     (
@@ -93,6 +150,11 @@ fn fnCollectKeys = ---------收集关键帧
             keyEnd = keyFirst + 1
         )
     )
+)
+
+fn fnChangeedtSliderTime =   ------------关键帧数字随滑条改变
+(
+    edtSliderTime.text = slidertime as string
 )
 
 fn fnSelLinkKeys keyBegin KeyEnd symbol =  ---------------选择link帧方法
