@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-09-28 11:48:53
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-10-25 19:20:35
+ * @LastEditTime: 2019-10-27 22:43:17
  * @Email: animator.bullet@foxmail.com
  */
 -- getKeyTime $.rotation.controller 1
@@ -20,7 +20,8 @@
 -- biped.moveKeys
 -- 左键+右键-
 -- v0.6 针对link帧大优化,可选是否有link帧,方便操作,增加移动帧功能,有问题随时反馈~
-
+-- 优化todo:只判断link子动画,不遍历所有,加快多骨骼的收集帧效率
+-- 增加神器按钮,打开小数帧,拖帧更平滑
 
 try(destroydialog rolloutBulletKeyTools)catch()
 
@@ -38,7 +39,7 @@ Global fnSelLinkKeys
 
 Global BulletConfig = ((getDir #scripts) + "\\BulletConfig.ini")  --配置文件路径
 Global iniPos  --位置保存记录
-Global keyMovedOffset
+Global keyMovedOffset = 5
 
 fn fnGetConfig attr nameAttrClass nameAttr valueAttr =  --设置初始信息方法
 (
@@ -55,46 +56,59 @@ fn fnSetConfig =  --保存参数,脚本位置
 	SetINISetting BulletConfig "BulletKeyToolsSet"  "Pos" (iniPos as string)
 )
 
-rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:205
+rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:260
 (
 	group ""
 	(
-		edittext edtSliderTime " 当前帧数"  pos:[10,20] width:55 usePercentageWidth:true percentageWidth:44.0 \
-		labelOnTop:true text:(sliderTime as string) bold:true readOnly:false
-		button btnClearSelKeys "清除帧选择" pos:[80,18] tooltip:"清除关键帧选择 (非删除帧)" \
-		height:20 width:90
-		button btnDelKeys "X" width:20 height:20 \
-		pos:[170,18] toolTip:"删除帧"
-		button btnToKeysRange "首尾帧范围" pos:[80,38] tooltip:"帧范围变成选中或全部物体首尾帧\r\n小心无限帧~ 后果未知..." \
-		height:20 width:110
+		label lblRangeTimeText "| 起始帧 |       | 结尾帧 |" pos:[10,18] width:180
+		edittext edtStartTime "" pos:[10,38] width:50 usePercentageWidth:true percentageWidth:44.0 \
+		labelOnTop:true text:(animationrange.start as string) bold:true readOnly:false
+		label lblTo "▃"  pos:[65,35]
+		edittext edtEndTime "" pos:[80,38] width:50 usePercentageWidth:true percentageWidth:44.0 \
+		labelOnTop:true text:(animationrange.end as string) bold:true readOnly:false
+		button btnFnFrameTicks "✧(≖ ◡ ≖" pos:[135,20] width:55 height:35 border:false \
+		tooltip:"点我点我点我~小数帧切换,\r\n方便滑条拖帧预览动画更平滑~"
+		button btnClearSelKeys "清除帧选择" pos:[10,60] tooltip:"清除关键帧选择 (非删除帧)" \
+		height:20 width:70
+		button btnDelKeys " X" width:25 height:20 \
+		pos:[80,60] toolTip:"删除所选帧"
+		button btnToKeysRange "首尾帧范围" pos:[10,80] tooltip:"帧范围变成首尾帧 !\r\n小心无限帧~ 后果未知..." \
+		height:20 width:70
+		button btnDelOutKeys "△"  width:25 height:20 \
+		pos:[80,80] toolTip:"清范围外帧"
+		button btnBoneTraj "切显Bone轨迹"  width:85 height:20 \
+		pos:[105,60] toolTip:"切换显示Bone轨迹,\r\n右键清除所有Bone轨迹"
+		checkbutton ckbBipedTraj "单独Biped轨迹"  width:85 height:20 \
+		pos:[105,80] toolTip:"给单个Biped添加轨迹,\r\n右键显示所有Biped轨迹"
 	)
 	group ""
 	(
-		edittext edtMoveKey  " 移动帧数" pos:[10,80] width:60 usePercentageWidth:true percentageWidth:44.0 \ 
+		edittext edtMoveKey  "  移动帧数" pos:[10,122] width:60 usePercentageWidth:true percentageWidth:44.0 \ 
 		labelOnTop:true text:"5f" bold:true readOnly:false 
-		button btnSet "5f"  pos:[81,95] width:35
-		button btnSet10 "10f"  pos:[118,95] width:35
-		button btnSetOpposite "负"  pos:[155,95] width:35
+		button btnSet5 "5f"  pos:[85,135] width:35
+		button btnSetAdd "+5f"  pos:[120,135] width:35
+		button btnSetOpposite "负"  pos:[155,135] width:30
 -- 		checkbox <name> [<caption>] [checked:<boolean>]
 		checkBox btnJudgeLinkKey "Link?" \
-		pos:[15,128] tooltip:"是否存在Link帧?" checked:false 
+		pos:[15,168] tooltip:"是否存在Link帧?" checked:false 
 		button btnSelBeforeKeys " " \
-		pos:[65,120] width:30 height:30 toolTip:"选择滑条前面关键帧" border:false
+		pos:[65,160] width:30 height:30 toolTip:"选择滑条前面关键帧" border:false
 		button btnSelAllKeys " " \
-		pos:[95,120] width:30 height:30 toolTip:"选择所有关键帧" border:false
+		pos:[95,160] width:30 height:30 toolTip:"选择所有关键帧" border:false
 		button btnSelAfterKeys " " \
-		pos:[125,120] width:30 height:30 toolTip:"选择滑条后面关键帧" border:false
+		pos:[125,160] width:30 height:30 toolTip:"选择滑条后面关键帧" border:false
 		button btnMoveKeys " " width:30 height:30 \
-		pos:[160,120] toolTip:"移动关键帧" border:false
+		pos:[155,160] toolTip:"移动关键帧" border:false
 	)
-	label labTips " --- 未选即处理全部, 注意无限帧! ---" \
-	pos:[5,162] style_sunkenedge:true height:35 width:190
-	HyperLink lnkLink "------ [ Author: Bullet.S  2019.09 ] -----" \
-	pos:[7,180] width:230 \ 
-	color:(color 255 20 100) hovercolor:(color 255 0 255) visitedcolor:(color 255 20 100) \
-	address:"https://space.bilibili.com/2031113"
-
-	fn fnAddKyes tempObj Link:off =
+	group ""
+	(
+		label labTips " --- 未选即处理全部, 注意无限帧! ---" \
+		pos:[5,210]  height:40 width:190
+		HyperLink lnkLink "------ [ Author: Bullet.S  2019.09 ] -----" pos:[7,230]
+		color:(color 255 20 100) hovercolor:(color 255 0 255) visitedcolor:(color 255 20 100) \
+		address:"https://space.bilibili.com/2031113"
+	)
+	fn fnAddKyes tempObj fnLink =
 	(	
 		local numObjSubs
 		local numLinkSubs
@@ -103,88 +117,143 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:205
 		local tempLinkObj
 		local tempLinkSubAnim
 		local tempLinkController
+		local keyTimeStartTemp
+		local keyTimeEndTemp
 		
-		if tempObj.controller != undefined then
+		if fnLink == 1 then
 		(
-			numObjSubs = tempObj.numSubs   ---------子动画数量
-			for n = 1 to numObjSubs do 
+			if (classof tempObj != Biped_Object) then
 			(
-				tempSubAnim = GetSubAnim tempObj n
-				if tempSubAnim != undefined then
+				if tempObj.controller != undefined then
 				(
-					tempController = tempSubAnim.Controller
-					if (classof tempController != UndefinedClass) then
+					if (classof tempObj.controller) == Link_Constraint then
 					(
-						if (classof tempObj != Biped_Object) then
+						for i = 1 to tempObj.controller.numsubs do 
 						(
-							if ((classof tempController != Link_Constraint) and (classof tempController != LinkTimeControl)) then
+							if ((GetSubAnimName tempObj.controller i) == #Link_Times) then
 							(
-								if tempController != undefined then 
+								if tempObj.controller[i].keys[1] != undefined then
 								(
-									if tempController.keys[1] != undefined then
+									for i in tempObj.controller[i].keys do 
 									(
-										-- arrKeysTime += for i in tempController.keys collect i.time
-										for i in tempController.keys do 
-										(
-											appendIfUnique arrKeysTime i.time
-										)
-	-- 									print (n as string + ":" + arrKeysTime as string)
+										appendIfUnique arrLinkKeys i
 									)
 								)
 							)
-							else
+							if ((GetSubAnimName tempObj.controller i) == #Link_Params) then
 							(
-								if Link == on then
+								tempLinkController = tempObj.controller[i]
+								if tempLinkController[1] != undefined then
 								(
-									tempLinkObj = tempController
-									if tempLinkObj != undefined then
+									for i = 1 to tempLinkController.numsubs do 
 									(
-										numLinkSubs = tempLinkObj.numSubs
-										for n = 1 to numLinkSubs do
+										if (((tempLinkController[i]).name == "Position") or \
+										((tempLinkController[i]).name == "Rotation") or \
+										((tempLinkController[i]).name == "Scale")) then
 										(
-											tempLinkSubAnim = GetSubAnim tempLinkObj n
-											for n = 1 to numLinkSubs do
+											if tempLinkController[i].keys[1] != undefined then
 											(
-												tempLinkSubAnim = GetSubAnim tempLinkObj n
-												if (GetSubAnimName tempLinkObj n) == #Link_Times then
-												(
-													if tempLinkSubAnim.keys[1] != undefined then
-													(
-														for i in tempLinkSubAnim.keys do 
-														(
-															appendIfUnique arrLinkKeys i
-														)
-													)
-												)
+												keyTimeStartTemp = tempLinkController[i].keys[1].time
+												keyTimeEndTemp = tempLinkController[i].keys[tempLinkController[i].keys.count].time
+												appendIfUnique arrKeysTime keyTimeStartTemp
+												appendIfUnique arrKeysTime keyTimeEndTemp
 											)
-											if tempLinkSubAnim.numSubs > 0 do (fnAddKyes tempLinkSubAnim)
 										)
 									)
 								)
-								-- else 
-								-- (
-								-- 	print "Link:off"
-								-- )
 							)
 						)
-						else 
+					)
+					if (classof tempObj.controller) == prs then
+					(
+						for i = 1 to tempObj.controller.numsubs do 
 						(
-							if tempObj.controller != undefined then 
+							if (((tempObj.controller[i]).name == "Position") or \
+							((tempObj.controller[i]).name == "Rotation") or \
+							((tempObj.controller[i]).name == "Scale")) then
 							(
-								if tempObj.controller.keys[1] != undefined then
+								if tempObj.controller[i].keys[1] != undefined then
 								(
-									-- arrKeysTime += for i in tempController.keys collect i.time
-									for i in tempObj.controller.keys do 
-									(
-										append arrKeysTime i.time
-									)
--- 									print (n as string + ":" + arrKeysTime as string)
+									keyTimeStartTemp = tempObj.controller[i].keys[1].time
+									keyTimeEndTemp = tempObj.controller[i].keys[tempObj.controller[i].keys.count].time
+									appendIfUnique arrKeysTime keyTimeStartTemp
+									appendIfUnique arrKeysTime keyTimeEndTemp
 								)
 							)
 						)
-					)----------------上面收集非biped的正常帧和收集link帧, 下面收集biped帧
+					)
 				)
-				if tempSubAnim.numSubs > 0 do (fnAddKyes tempSubAnim)  ----子动画递归
+			)
+		)
+		if fnLink == 0 then
+		(
+			if (classof tempObj != Biped_Object) then
+			(
+				if (classof tempObj.controller) == prs then
+				(
+					for i = 1 to tempObj.controller.numsubs do 
+					(
+						if (((tempObj.controller[i]).name == "Position") or \
+						((tempObj.controller[i]).name == "Rotation") or \
+						((tempObj.controller[i]).name == "Scale")) then
+						(
+							if tempObj.controller[i].keys[1] != undefined then
+							(
+								keyTimeStartTemp = tempObj.controller[i].keys[1].time
+								keyTimeEndTemp = tempObj.controller[i].keys[tempObj.controller[i].keys.count].time
+								appendIfUnique arrKeysTime keyTimeStartTemp
+								appendIfUnique arrKeysTime keyTimeEndTemp
+							)
+						)
+					)
+				)
+				if (classof tempObj.controller) == Link_Constraint then
+				(
+					for i = 1 to tempObj.controller.numsubs do 
+					(
+						if ((GetSubAnimName tempObj.controller i) == #Link_Params) then
+						(
+							tempLinkController = tempObj.controller[i]
+							if tempLinkController[1] != undefined then
+							(
+								for i = 1 to tempLinkController.numsubs do 
+								(
+									if (((tempLinkController[i]).name == "Position") or \
+									((tempLinkController[i]).name == "Rotation") or \
+									((tempLinkController[i]).name == "Scale")) then
+									(
+										if tempLinkController[i].keys[1] != undefined then
+										(
+											keyTimeStartTemp = tempLinkController[i].keys[1].time
+											keyTimeEndTemp = tempLinkController[i].keys[tempLinkController[i].keys.count].time
+											appendIfUnique arrKeysTime keyTimeStartTemp
+											appendIfUnique arrKeysTime keyTimeEndTemp
+										)
+									)
+								)
+							)
+						)
+					)
+				)
+			)
+-- 			else
+-- 			(
+-- 				
+-- 			)
+		)----------------上面收集非biped的正常帧和收集link帧, 下面收集biped帧
+		-- arrKeysTime = makeUniqueArray arrKeysTime  ---去除重复帧数
+		sort arrKeysTime  ----帧数排序
+		if ((arrKeysTime.count != 0) and (arrKeysTime.count > 1)) then
+		(
+			keyFirst = arrKeysTime[1]            ------找到首帧
+			keyEnd = arrKeysTime[arrKeysTime.count]   -----------找到尾帧
+		)
+		else  --防止首尾同帧的保险
+		(
+			if (arrKeysTime.count == 1) then
+			(
+				keyFirst = arrKeysTime[1]
+				keyEnd = keyFirst + 1
 			)
 		)
 	)
@@ -194,45 +263,33 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:205
 		arrKeysTime = #()
 		arrBipedKeys = #() ----------------先清空数组
 		arrLinkKeys = #()
-		
 		case of  -----------处理选中,未选中则处理全部
 		(
 			(selection.count == 0):
 			(
-				for i in objects do 
+				for i in (objects as array) do 
 				(
-					if rolloutBulletKeyTools.btnJudgeLinkKey.checked == false then fnAddKyes i
-					else fnAddKyes i link:on
+					if rolloutBulletKeyTools.btnJudgeLinkKey.checked == false then fnAddKyes i 0
+					else 
+					fnAddKyes i 1
 				)
 			)
-			default:(
-				for i in selection do 
-				(
-					if rolloutBulletKeyTools.btnJudgeLinkKey.checked == false then fnAddKyes i
-					else fnAddKyes i link:on
-				)
-			)
-		)
-		-- arrKeysTime = makeUniqueArray arrKeysTime  ---去除重复帧数
-		sort arrKeysTime  ----帧数排序
-		if ((arrKeysTime.count != 0) and (arrKeysTime.count > 1)) then
-		(
-			keyFirst = arrKeysTime[1]            ------找到首帧
-			keyEnd = arrKeysTime[arrKeysTime.count]   -----------找到尾帧
-		)
-		else
-		(
-			if (arrKeysTime.count == 1) then
+			default:
 			(
-				keyFirst = arrKeysTime[1]
-				keyEnd = keyFirst + 1
+				for i in (selection as array) do 
+				(
+					if rolloutBulletKeyTools.btnJudgeLinkKey.checked == false then fnAddKyes i 0
+					else 
+					fnAddKyes i 1
+				)
 			)
 		)
 	)
 	
-	fn fnChangeedtSliderTime =   ------------关键帧数字随滑条改变
+	fn fnChangetRangeTime =   ------------关键帧数字随滑条改变
 	(
-		edtSliderTime.text = slidertime as string
+		rolloutBulletKeyTools.edtStartTime.text = animationrange.start as string
+		rolloutBulletKeyTools.edtEndTime.text = animationrange.end as string
 	)
 
 	fn fnSelLinkKeys keyBegin KeyEnd symbol =  ---------------选择link帧方法
@@ -321,15 +378,14 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:205
 		btnSelBeforeKeys.images = #("VCRControls_24i.bmp","VCRControls_24i.bmp",28,3,3,3,3,true,true) 
 		btnSelAfterKeys.images = #("VCRControls_24i.bmp","VCRControls_24i.bmp",28,11,11,11,11,true,true) 
 		btnSelAllKeys.images = #("VCRControls_24i.bmp","VCRControls_24i.bmp",28,26,26,26,26,true,true)
-		btnMoveKeys.images = #("VCRControls_24i.bmp","VCRControls_24i.bmp",28,21,21,21,21,true,true)
+		btnMoveKeys.images = #("ViewportNavigationControls_24i.bmp","ViewportNavigationControls_24i.bmp",46,39,39,39,39,true,true)
 -- 		btnMoveAfterKeys.images = #("VCRControls_24i.bmp","VCRControls_24i.bmp",28,13,13,13,13,true,true)
 		
-
+		timeDIsTemp = timeDisplayMode
 		-- iniPos = (GetDialogPos rolloutBulletKeyTools) 
 		fnSaveConfig ()  ---------------脚本位置赋值
 		fnSetConfig ()  ----------------保存位置信息到ini文件
-		fnChangeedtSliderTime ()
-		registerTimeCallback fnChangeedtSliderTime  -------------帧数随滑条改变添加回调
+		registerTimeCallback fnChangetRangeTime  -------------帧范围改变添加回调
 	)
 	
 	on rolloutBulletKeyTools close do -- 关闭记忆浮动窗口位置
@@ -338,26 +394,59 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:205
 		fnSetConfig ()
 	)
 	
-	on edtSliderTime entered valTime do  --------滑条定位到输入的帧数
-	(
-		if ((valTime != ".") and (valTime as time != undefined) and (valTime != "")) then
+	on edtStartTime entered valTime do  --------初始帧定位到输入的帧数
+	(		
+		local rangeStart = valTime as time
+		if ((valTime != ".") and (valTime as time != undefined) and \
+		(valTime != "") and (rangeStart < animationrange.end)) then
 		(
-			case of  ----------判断输入帧数是否在帧栏范围外
-			(
-				(valTime as time > animationrange.end):
-				(
-					animationrange = (interval animationrange.start (valTime as time))
-					slidertime = valTime as time
-				)
-				(valTime as time < animationrange.start):
-				(
-					animationrange = (interval (valTime as time) animationrange.end)
-					slidertime = valTime as time
-				)
-				default:(slidertime = valTime as time)
-			)
+			animationrange = (interval rangeStart animationrange.end)
 		)
-		else messageBox "---------------\r\n请输入帧数"
+		else messageBox "----------------------\r\n请输入正确帧数!"
+	)
+
+	on edtEndTime entered valTime do  --------初始帧定位到输入的帧数
+	(		
+		local rangEnd = valTime as time
+		if ((valTime != ".") and (valTime as time != undefined) and \ 
+		(valTime != "") and (rangEnd > animationrange.start)) then
+		(
+			animationrange = (interval animationrange.start rangEnd)
+		)
+		else messageBox "----------------------\r\n请输入正确帧数!"
+	)
+	
+	on btnFnFrameTicks pressed do
+	(
+		if timeDisplayMode != #frameTicks then 
+		(
+			timeDisplayMode = #frameTicks
+			btnFnFrameTicks.text = "(=`▽`)"
+		)
+		else 
+		(
+			timeDisplayMode = #frames
+			btnFnFrameTicks.text = "✧(≖ ◡ ≖"
+		)
+		slidertime -= 1
+		slidertime += 1
+	)
+
+	on btnBoneTraj pressed do 
+	(
+		for i in (selection as array) where (classof i != Biped_Object) do
+		(
+			if i.showtrajectory == true then i.showtrajectory = false
+			else i.showtrajectory = true
+		)
+	)
+
+	on btnBoneTraj rightclick do
+	(
+		for i in (objects as array) where (classof i != Biped_Object) do
+		(
+			if i.showtrajectory == true then i.showtrajectory = false
+		)
 	)
 
 	on edtMoveKey entered val do
@@ -367,18 +456,19 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:205
 			keyMovedOffset = (val as time)
 			rolloutBulletKeyTools.edtMoveKey.text = keyMovedOffset as string
 		)
-		else messageBox "---------------\r\n请输入帧数"
+		else messageBox "----------------------\r\n请输入正确帧数!"
 	)
 
-	on btnSet pressed do 
+	on btnSet5 pressed do 
 	(
 		edtMoveKey.text = "5f"
 		keyMovedOffset = 5
 	)
-	on btnSet10 pressed do 
+	on btnSetAdd pressed do 
 	(
-		edtMoveKey.text = "10f"
-		keyMovedOffset = 10
+		edtMoveKey.text = "+5f"
+		keyMovedOffset += 5
+		edtMoveKey.text = keyMovedOffset as string + "f"
 	)
 	on btnSetOpposite pressed do
 	(
@@ -387,6 +477,8 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:205
 	)
 	on btnMoveKeys pressed do 
 	(
+		local rangEnd = animationrange.end
+		local rangeStart = animationrange.start
 		if keyMovedOffset != undefined then
 		(
 			if selection.count != 0 then
@@ -403,6 +495,17 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:205
 					moveKeysAndLinkKeys i keyMovedOffset
 				)
 			)
+			if keyMovedOffset > 0 then 
+			(
+				rangEnd = animationrange.end + keyMovedOffset
+				animationrange = interval animationrange.start rangEnd
+			)
+			else if keyMovedOffset < 0 then 
+			(
+				rangeStart = animationrange.start + keyMovedOffset
+				animationrange = interval rangeStart animationrange.end
+			)
+			
 		)
 	)
 	on btnSelBeforeKeys pressed do  ------------选择滑条之前帧
@@ -501,6 +604,17 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:205
 			)
 		)
 		else
+		(
+			if arrLinkKeys.count != 0 then
+			(
+				for i in arrLinkKeys do i.selected = false
+			)
+		)
+	)
+	
+	on btnJudgeLinkKey changed state do 
+	(
+		if btnJudgeLinkKey.state == false then
 		(
 			if arrLinkKeys.count != 0 then
 			(

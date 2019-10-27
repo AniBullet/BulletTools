@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-08-03 17:36:21
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-10-22 13:15:49
+ * @LastEditTime: 2019-10-28 01:05:30
  * @Email: animator.bullet@foxmail.com
  */
 
@@ -13,7 +13,7 @@ try (destroyDialog BStools) catch()
 Global mouPosX = mouse.screenpos.x  
 Global mouPosY = mouse.screenpos.y  --获取鼠标位置
 
-Global ver = " v0.6  --- 4869"
+Global ver = " v0.6 -- Bullet.S"
 
 Global pathScripts = ((getDir #scripts) + "\\BulletS")
 Global BulletConfig = ((getDir #scripts) + "\\BulletConfig.ini")  --配置文件路径
@@ -219,15 +219,17 @@ fn fnUninst = --卸载方法(待补充)
 		)
 		if (doesfileexist ((getDir #StartupScripts) + "\\BulletTools.ms") == true) then
 		(
+			setFileAttribute ((getDir #StartupScripts) + "\\BulletTools.ms") #readOnly false
 			deleteFile ((getDir #StartupScripts) + "\\BulletTools.ms")
 		)
 		if (doesfileexist ((getDir #Scripts) + "\\BulletTools.ms") == true) then
 		(
 			deleteFile ((getDir #Scripts) + "\\BulletTools.ms")
 		)
-		if (doesfileexist ((getDir #userMacros)+"\\BulletTools.mcr") == true) then
+		if (doesfileexist ((getDir #userMacros)+"\\_[BulletTools]-BulletTools.mcr") == true) then
 		(
-			deleteFile ((getDir #userMacros)+"\\BulletTools.mcr")
+			setFileAttribute ((getDir #userMacros)+"\\_[BulletTools]-BulletTools.mcr") #readOnly false
+			deleteFile ((getDir #userMacros)+"\\_[BulletTools]-BulletTools.mcr")
 		)
 		
 		if (shellLaunch "explorer.exe" (getDir #scripts)) then
@@ -441,6 +443,7 @@ rcmenu menuBStoolsSetting --设置菜单
 	(
 		if (doesfileexist ((getDir #StartupScripts) + "\\BulletTools.ms") == true) then
 		(
+			setFileAttribute ((getDir #StartupScripts) + "\\BulletTools.ms") #readOnly false
 			deleteFile ((getDir #StartupScripts) + "\\BulletTools.ms")
 			messagebox "------------------------------------------\r\n脚本自启已解除,\r\n但仍可点击工具栏按钮打开~\r\n\r\n"
 		)
@@ -671,7 +674,7 @@ rcmenu menuSetFps
 
 	on menuSetFps open do 
 	(
-		menuSetFps.menuCurrentFps.text = strCurrentFps
+		menuSetFps.menuCurrentFps.text = "当前帧率: " + framerate as string + " FPS"
 	)
 
 	on menuSet60Fps picked do 
@@ -707,10 +710,14 @@ rollout rolloutLit "快捷操作"
 
 	HyperLink lnkTips "( 右键图标功能提示 )" pos:[3,3] width:BStools.width color:(color 255 20 147) hovercolor:(color 255 0 255) visitedcolor:(color 255 20 147) address:"https://space.bilibili.com/2031113"
 	
-	button btnReset " " pos:(fnRolLitBtnPos 1 1) width:btnTipsSize height:btnTipsSize toolTip:"静默重置场景"
-	button btnTipsIsolate "" pos:(fnRolLitBtnPos 2 1)  width:btnTipsSize height:btnTipsSize toolTip:"单独显示选中物体"
-	button btnSetFps " " pos:(fnRolLitBtnPos 3 1) width:btnTipsSize height:btnTipsSize toolTip:"设置帧率"
-	button btnSetPlaySpeed " " pos:(fnRolLitBtnPos 4 1) width:btnTipsSize height:btnTipsSize toolTip:"设置播放速度"
+	button btnReset " " pos:(fnRolLitBtnPos 1 1) width:btnTipsSize height:btnTipsSize \
+	toolTip:"静默重置场景"
+	button btnTipsIsolate "" pos:(fnRolLitBtnPos 2 1)  width:btnTipsSize height:btnTipsSize \
+	toolTip:"蒙皮时左键编辑模型,\r\n右键隐藏选择面,\r\n已隐藏则显示全部元素"
+	button btnSetFps " " pos:(fnRolLitBtnPos 3 1) width:btnTipsSize height:btnTipsSize \
+	toolTip:"设置帧率"
+	button btnSetPlaySpeed " " pos:(fnRolLitBtnPos 4 1) width:btnTipsSize height:btnTipsSize \
+	toolTip:"设置播放速度"
 	button btnTips4 " " pos:(fnRolLitBtnPos 1 2) width:btnTipsSize height:btnTipsSize toolTip:" "
 	button btnTips5 " " pos:(fnRolLitBtnPos 2 2) width:btnTipsSize height:btnTipsSize toolTip:" "
 	button btnTips6 " " pos:(fnRolLitBtnPos 3 2) width:btnTipsSize height:btnTipsSize toolTip:" "
@@ -746,7 +753,49 @@ rollout rolloutLit "快捷操作"
 
 	on btnReset rightClick do (messagebox "---------------------------------------\r\n静默重置场景并最大化view, \r\n方便快速打开其他文件, \r\n不带之前材质球等多余配置, \r\n且没有重置提示~强烈推荐!")
 
-	on btnTipsIsolate pressed do (messagebox "---------------------------\r\n施工中,\r\n待添加更多实用功能")
+	on btnTipsIsolate pressed do 
+	(
+		local objSelTemp
+		if (selection.count == 1) and (classof $ != undefined) then
+		(
+			objSelTemp = $
+			if (classof objSelTemp == Editable_Poly) then
+			(
+				modPanel.setCurrentObject objSelTemp
+				subobjectLevel = 5
+			)
+			else
+			(
+				messagebox "------------------------------------\r\n仅支持 Editable_Poly 模型~"
+			)
+		)
+	)
+	on btnTipsIsolate rightclick do 
+	(
+		local objSelTemp
+		if (selection.count == 1) and (classof $ != undefined) then
+		(
+			objSelTemp = $
+			if (classof objSelTemp == Editable_Poly) then
+			(
+				if ((polyop.getHiddenFaces $) as array).count == 0 then
+				(
+					subobjectLevel = 0
+				)
+				else
+				(
+					modPanel.setCurrentObject objSelTemp
+					subobjectLevel = 5
+					objSelTemp.unhideAll #Face
+					subobjectLevel = 0
+				)
+			)
+			else
+			(
+				messagebox "------------------------------------\r\n仅支持 Editable_Poly 模型~"
+			)
+		)
+	)
 
 	on btnSetFps pressed do 
 	(

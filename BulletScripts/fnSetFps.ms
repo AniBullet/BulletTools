@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-10-08 12:39:08
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-10-09 21:59:36
+ * @LastEditTime: 2019-10-27 19:26:38
  * @Email: animator.bullet@foxmail.com
  */
 
@@ -35,6 +35,8 @@ rollout rolCustomFps ""
     (
         framerate = valueFps
         labTips.text = "当前帧率: " + framerate as string + " FPS"
+        slidertime -= 1
+		slidertime += 1
     )
 )
 
@@ -43,6 +45,8 @@ fn fnSetFps numFps =
     framerate = numFps
     valueFps = numFps
     strCurrentFps = "当前帧率: " + framerate as string + " FPS"
+    slidertime -= 1
+    slidertime += 1
 )
 
 rcmenu menuSetFps
@@ -56,7 +60,7 @@ rcmenu menuSetFps
 
     on menuSetFps open do 
     (
-        menuSetFps.menuCurrentFps.text = strCurrentFps
+        menuSetFps.menuCurrentFps.text = "当前帧率: " + framerate as string + " FPS"
     )
 
     on menuSet60Fps picked do 

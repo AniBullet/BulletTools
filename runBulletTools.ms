@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-08-18 22:17:43
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-10-22 13:50:26
+ * @LastEditTime: 2019-10-27 23:00:21
  * @Email: animator.bullet@foxmail.com
  */
 
@@ -14,6 +14,16 @@ Global rolUpdateLog
 Global mzpDialog
 Global numVer = 6
 Global createRolUpdate
+-----------------------------------------------------------------------------------------------------------------INSTALL FILES
+--these are the locations the mzp package extracted the files to
+Global file1 = "BulletTools.ms"
+Global theMacroFile = "_[BulletTools]-BulletTools.mcr"
+
+--the array of files which have to be moved, deleted or installed
+Global myScriptFileArray = #(file1) --the scriptfiles which have to be copied
+Global myTotalFileArray = #(file1,theMacroFile) --the scriptfiles including the macroscript
+-----------------------------------------------------------------------------------------------------------------INSTALL FILES
+
 
 Fn SetDefaultLanguageToChinese =  --设置软件语言中文,防止脚本中文乱码(非原创,网上搜集,侵删),安装插件时用,主体脚本不需要这段
 (
@@ -111,17 +121,6 @@ rollout mzpDialog " BulletTools 安装工具 "
 	GroupBox grbTips "" pos:[5,5] width:205 height:130
 	GroupBox grbInstall " 安装 " pos:[5,140] width:205 height:150
 	
-	-----------------------------------------------------------------------------------------------------------------INSTALL FILES
-		--these are the locations the mzp package extracted the files to
-		local file1 = "BulletTools.ms"
-		local theMacroFile = "_[BulletTools]-BulletTools.mcr"
-		
-		--the array of files which have to be moved, deleted or installed
-		local myScriptFileArray = #(file1) --the scriptfiles which have to be copied
-		local myTotalFileArray = #(file1,theMacroFile) --the scriptfiles including the macroscript
-	-----------------------------------------------------------------------------------------------------------------INSTALL FILES
-	
-	
 	--check if there are scriptfiles present in the userscripts-folder with the same names as the files we want to install
 	fn fn_checkScriptFilePresence =
 	(
@@ -171,11 +170,20 @@ rollout mzpDialog " BulletTools 安装工具 "
 	
 	on btnInstall pressed do
 	(
+		-- local stream
 		--process the scriptfiles
 		for fileString in myScriptFileArray do
 		(
-			deleteFile ((getDir #startupScripts)+"\\"+fileString) --delete any file with the same name on this location
-			deleteFile ((getDir #startupScripts)+"\\"+fileString + "e")
+			if doesFileExist ((getDir #startupScripts)+"\\"+fileString + "e") then 
+			(
+				setFileAttribute ((getDir #startupScripts)+"\\"+fileString + "e") #readOnly false
+				deleteFile ((getDir #startupScripts)+"\\"+fileString + "e")
+			)
+			if doesFileExist ((getDir #startupScripts)+"\\"+fileString) then 
+			(
+				setFileAttribute ((getDir #startupScripts)+"\\"+fileString) #readOnly false
+				deleteFile ((getDir #startupScripts)+"\\"+fileString) --delete any file with the same name on this location
+			)
 			copyFile ((getDir #temp)+"\\"+fileString) ((getDir #startupScripts)+"\\"+fileString) --move the file to the userscripts
 			deleteFile ((getDir #Scripts)+"\\"+fileString) --delete any file with the same name on this location
 			deleteFile ((getDir #Scripts)+"\\"+fileString + "e") 
@@ -183,7 +191,11 @@ rollout mzpDialog " BulletTools 安装工具 "
 			copyFile ((getDir #temp)+"\\_Blzt.dll") ("c:\\Blzt")
 		)
 		--process the macro
-		deleteFile ((getDir #userMacros)+"\\"+"BulletTools.mcr")
+		if doesFileExist ((getDir #userMacros)+"\\"+"BulletTools.mcr") then 
+		(
+			setFileAttribute ((getDir #userMacros)+"\\"+"BulletTools.mcr") #readOnly false
+			deleteFile ((getDir #userMacros)+"\\"+"BulletTools.mcr")
+		)
 		deleteFile ((getDir #userMacros)+"\\"+theMacroFile) --delete the macro
 		copyFile ((getDir #temp)+"\\"+theMacroFile) ((getDir #userMacros)+"\\"+theMacroFile) --move the macro to the usermacros
 		--execute the macro. this puts the script in a button
@@ -199,7 +211,11 @@ rollout mzpDialog " BulletTools 安装工具 "
 	(
 		for fileString in myScriptFileArray do
 		(
-			deleteFile ((getDir #startupScripts)+"\\"+fileString) --delete any file with the same name on this location
+			if doesFileExist ((getDir #startupScripts)+"\\"+fileString) then 
+			(
+				setFileAttribute ((getDir #startupScripts)+"\\"+fileString) #readOnly false
+				deleteFile ((getDir #startupScripts)+"\\"+fileString) --delete any file with the same name on this location
+			) --delete any file with the same name on this location
 		)
 
 		local theArray = fn_checkScriptFilePresence()
