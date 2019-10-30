@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-09-28 11:48:53
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-10-30 21:21:19
+ * @LastEditTime: 2019-10-30 21:23:40
  * @Email: animator.bullet@foxmail.com
  */
 -- getKeyTime $.rotation.controller 1
@@ -111,7 +111,7 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 		address:"https://space.bilibili.com/2031113"
 		label labmiHoYo "--- TECH OTAKUS SAVE THE WORLD --" \
 		pos:[7,235] width:190
-		label labTips "---- 未选即处理全部, 注意无限帧! ----" \
+		label labTips "---- 未选即处理全部, 注意无限帧! --" \
 		pos:[7,255]  height:15 width:190
 	)
 ----------------------------------UI及作者ID------------------------------------------------
