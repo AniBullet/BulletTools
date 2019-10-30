@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-09-28 11:48:53
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-10-30 21:18:49
+ * @LastEditTime: 2019-10-30 21:21:19
  * @Email: animator.bullet@foxmail.com
  */
 -- getKeyTime $.rotation.controller 1
@@ -102,7 +102,7 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 		button btnSelAfterKeys " " \
 		pos:[125,160] width:30 height:30 toolTip:"选择滑条后面关键帧" border:false
 		button btnMoveKeys " " width:30 height:30 \
-		pos:[155,160] toolTip:"移动关键帧,\r\n左键带帧栏范围增减,\r\n右键范围不变~\r\n*Bipe暂只支持整个骨架移帧" border:false
+		pos:[155,160] toolTip:"移动关键帧,\r\n左键带帧栏范围增减,\r\n右键范围不变~" border:false
 	)
 	group ""
 	(
