@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-09-28 11:48:53
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-10-30 21:23:40
+ * @LastEditTime: 2019-11-01 20:03:09
  * @Email: animator.bullet@foxmail.com
  */
 -- getKeyTime $.rotation.controller 1
@@ -42,6 +42,8 @@ Global BulletConfig = ((getDir #scripts) + "\\BulletConfig.ini")  --配置文件
 Global iniPos  --位置保存记录
 Global keyMovedOffset = 5
 Global symbol ----选择的范围判断, 0左边,1右边,2全部
+Global layerTraj --轨迹辅助层
+Global arrTraj = #()  ---轨迹存放数组,方便删除
 
 ------------------全局变量-------------------------------------------------------------------
 
@@ -82,8 +84,8 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 		pos:[80,80] toolTip:"左键清除选择帧\r\n右键清范围外帧(无限帧)"
 		button btnBoneTraj "切显Bone轨迹"  width:85 height:20 \
 		pos:[105,60] toolTip:"切换显示Bone轨迹,\r\n右键清除所有Bone轨迹"
-		checkbutton ckbBipedTraj "单独Biped轨迹"  width:85 height:20 \
-		pos:[105,80] toolTip:"给单个Biped添加轨迹,\r\n右键显示所有Biped轨迹\r\n(施工中)" enabled:false
+		button btnBipedTraj "单独Biped轨迹"  width:85 height:20 \
+		pos:[105,80] toolTip:"左键切换显示单个Biped轨迹,\r\n右键切换显示所有Biped轨迹~"
 	)
 	group ""
 	(
@@ -527,6 +529,43 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 		)
 	)
 
+	fn fnAddTrajLayer =
+	(
+		if (LayerManager.getLayerFromName "Biped_Trajectories") != undefined then
+		(
+			layerTraj = LayerManager.getLayerFromName "Biped_Trajectories"
+		)
+		else layerTraj = LayerManager.newLayerFromName "Biped_Trajectories"
+		layerTraj.lock = on
+	)
+
+	fn fnAddBipedTraj tempBiped =
+	(
+		pointTraj = point name:("Traj_" + tempBiped.name) \
+				size:0 cross:true 
+		appendIfUnique arrTraj pointTraj
+		freeze pointTraj
+		pointTraj.pos = tempBiped.center
+		pointTraj.parent = tempBiped
+		layerTraj.addNode pointTraj
+		deleteKeys pointTraj #allKeys
+		pointTraj.showTrajectory = true
+		-- ResetXForm pointTraj
+	)
+
+	fn fnDeleteTraj tempBiped =
+	(
+		local deleteTraj
+		local deleteTrajName = ("Traj_" + tempBiped.name)
+		local deleteTraArrID = findItem arrTraj deleteTrajName
+		if deleteTraArrID != 0 then
+		(
+			deleteTraj = arrTraj[deleteTraArrID]
+			deleteItem arrTraj deleteTraArrID
+		)
+		if (getNodeByName deleteTrajName) != undefined then (delete (getNodeByName deleteTrajName))
+	)
+
 	on rolloutBulletKeyTools open do  ----打开脚本时操作
 	(------刷新图标, 图标是max自带的,主要是懒得做
 		btnSelBeforeKeys.images = #("VCRControls_24i.bmp","VCRControls_24i.bmp",28,3,3,3,3,true,true) 
@@ -621,12 +660,54 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 		)
 	)
 
+	on btnBipedTraj pressed do 
+	(
+		fnAddTrajLayer () ----是否创建轨迹层
+		if (selection.count > 1) then
+		(
+			for i in (selection as array) do
+			(
+				if classof i == Biped_Object then
+				(
+					if (getNodeByName ("Traj_" + i.name)) != undefined then 
+					(
+						fnDeleteTraj i
+					)
+				)
+			)
+		)
+		else if selection.count == 1 then
+		(
+			if classof $ == Biped_Object then
+				(
+					if (getNodeByName ("Traj_" + $.name)) != undefined then 
+					(
+						fnDeleteTraj $
+					)
+					else fnAddBipedTraj $
+				)
+		)
+	)
+
+	on btnBipedTraj rightclick do
+	(
+		for i in (selection as array) where (selection.count != 0) do
+		(
+			if classof i == Biped_Object then
+			(
+				trajDisFn = i.controller.rootNode.controller.displayTrajectories
+				if trajDisFn == true then i.controller.rootNode.controller.displayTrajectories = false
+				else i.controller.rootNode.controller.displayTrajectories = true
+			)
+		)
+	)
+
 	on edtMoveKey entered val do   -----移动帧数自定义,输入即可
 	(
 		if ((val != ".") and (val as time != undefined) and (val != "")) then
 		(------"."他也认为是数字...
-			keyMovedOffset = (val as time)
-			rolloutBulletKeyTools.edtMoveKey.text = keyMovedOffset as string
+			keyMovedOffset = val as integer
+			rolloutBulletKeyTools.edtMoveKey.text = keyMovedOffset as string + "f"
 		)
 		else messageBox "----------------------\r\n请输入正确帧数!"
 	)
