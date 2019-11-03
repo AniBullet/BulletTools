@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-08-03 17:36:21
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-10-28 01:05:30
+ * @LastEditTime: 2019-11-03 01:48:48
  * @Email: animator.bullet@foxmail.com
  */
 
@@ -400,7 +400,7 @@ fn fnRefreshRolLit =
 	)
 	addSubRollout BStools.BStoolsLit rolloutLit 
 	BStools.BStoolsLit.width = 129
-	BStools.BStoolsLit.height = 180
+	BStools.BStoolsLit.height = 155
 	BStools.BStoolsLit.pos = BStools.BStoolsTool.pos + [0,(BStools.BStoolsTool.height + 10)]
 	if iniStyle == 0 then BStools.height = 134 + BStools.BStoolsMain.height + BStools.BStoolsScripts.height + BStools.BStoolsTool.height + BStools.BStoolsLit.height
 )

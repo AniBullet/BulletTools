@@ -1,9 +1,9 @@
 /*
- * @Description: 关键帧小工具,移动帧得筛选Biped,先暂时搁置...
+ * @Description: 关键帧小工具,逐渐丰富中
  * @Author: Bullet.S
  * @Date: 2019-09-28 11:48:53
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-11-01 20:03:09
+ * @LastEditTime: 2019-11-03 02:52:50
  * @Email: animator.bullet@foxmail.com
  */
 -- getKeyTime $.rotation.controller 1
@@ -25,8 +25,10 @@
 
 try(destroydialog rolloutBulletKeyTools)catch()
 
-Global mouPosX = mouse.screenpos.x  
-Global mouPosY = mouse.screenpos.y  --获取鼠标位置
+Global posMouX = mouse.screenpos.x  
+Global posMouY = mouse.screenpos.y  --获取鼠标位置
+Global posMouMoved = [0,0]
+Global fnMouseState = false
 
 Global arrKeysTime = #()  ----------biped和bone的首尾帧
 Global arrLinkKeys = #()  -----------存link帧
@@ -54,7 +56,7 @@ fn fnGetConfig attr nameAttrClass nameAttr valueAttr =  --设置初始信息方�
 )
 fn fnSaveConfig =  --引用上面方法提出需要的参数
 (----提出脚本位置
-	iniPos = fnGetConfig iniPos "BulletKeyToolsSet" "Pos" ([mouPosX,mouPosY] as string)
+	iniPos = fnGetConfig iniPos "BulletKeyToolsSet" "Pos" ([posMouX,posMouY] as string)
 )
 fnSaveConfig () --初始执行一遍
 fn fnSetConfig =  --保存参数,脚本位置
@@ -62,60 +64,66 @@ fn fnSetConfig =  --保存参数,脚本位置
 	SetINISetting BulletConfig "BulletKeyToolsSet"  "Pos" (iniPos as string)
 )
 ---------------配合BulletTools工具的ini文件保存位置信息-----------------
-rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
+rollout rolloutBulletKeyTools "" width:200 height:210
 (
-	group ""  ---------------------------------UI--------------------------------------
-	(
-		label lblRangeTimeText "| 起始帧 |       | 结尾帧 |" pos:[10,18] width:180
-		edittext edtStartTime "" pos:[10,38] width:50 usePercentageWidth:true percentageWidth:44.0 \
-		labelOnTop:true text:(animationrange.start as string) bold:true readOnly:false
-		label lblTo "▃"  pos:[65,35]
-		edittext edtEndTime "" pos:[80,38] width:50 usePercentageWidth:true percentageWidth:44.0 \
-		labelOnTop:true text:(animationrange.end as string) bold:true readOnly:false
-		button btnFnFrameTicks "✧(≖ ◡ ≖" pos:[135,15] width:55 height:40 border:false \
-		tooltip:"点我点我点我~小数帧切换,\r\n方便滑条拖帧预览动画更平滑~\r\n可能看到正常看不出的问题"
-		button btnClearSelKeys "清除帧选择" pos:[10,60] tooltip:"清除关键帧选择 (非删除帧)" \
-		height:20 width:70
-		button btnSelBoneBiped "▼" width:25 height:20 \
-		pos:[80,60] toolTip:"左键选择所有biped\r\n右键选择所有bone"
-		button btnToKeysRange "首尾帧范围" pos:[10,80] tooltip:"帧范围变成首尾帧 !\r\n小心无限帧~ 后果未知..." \
-		height:20 width:70
-		button btnDelOutKeys "▲"  width:25 height:20 \
-		pos:[80,80] toolTip:"左键清除选择帧\r\n右键清范围外帧(无限帧)"
-		button btnBoneTraj "切显Bone轨迹"  width:85 height:20 \
-		pos:[105,60] toolTip:"切换显示Bone轨迹,\r\n右键清除所有Bone轨迹"
-		button btnBipedTraj "单独Biped轨迹"  width:85 height:20 \
-		pos:[105,80] toolTip:"左键切换显示单个Biped轨迹,\r\n右键切换显示所有Biped轨迹~"
-	)
-	group ""
-	(
-		edittext edtMoveKey  "  移动帧数" pos:[10,122] width:60 usePercentageWidth:true percentageWidth:44.0 \ 
-		labelOnTop:true text:"5f" bold:true readOnly:false 
-		button btnSet5 "5f"  pos:[85,135] width:35
-		button btnSetAdd "+5f"  pos:[120,135] width:35
-		button btnSetOpposite "负"  pos:[155,135] width:30
+	---------------------------------UI--------------------------------------
+	groupbox gbxMainUI "[ K 帧工具_v0.7 ] ------ 中键关闭" pos:[5,5] width:190 height:130
+	
+		label lblRangeTimeText "| 起始帧 |       | 结尾帧 |" pos:[10,25] width:180
+		spinner spiStartTime "" pos:[10,43] width:50 type:#integer \
+		range:[-999999999,999999999,animationrange.start] scale:1
+-- 		setKeyBrackets:true
+		label lblTo "▃"  pos:[65,36]
+		spinner spiEndTime "" pos:[80,43] width:50 type:#integer \
+		range:[-999999999,999999999,animationrange.end] scale:1
+-- 		setKeyBrackets:true
+		button btnFnFrameTicks "✧(≖ ◡ ≖" pos:[135,30] width:55 height:30 border:false \
+		tooltip:"点我点我点我~\r\n发现新世界!!!~\r\n右键切换小数帧\r\n平滑拖帧看卡顿!"
+		edittext edtMoveKey "移动" width:70 usePercentageWidth:true percentageWidth:44.0 \ 
+		pos:[10,72] labelOnTop:false text:"5f" bold:true readOnly:false 
+		button btnSet5 "5f" width:35 pos:[90,70]
+		button btnSetAdd "+5f" width:35 pos:[125,70]
+		button btnSetOpposite "负" width:30 pos:[160,70]
 -- 		checkbox <name> [<caption>] [checked:<boolean>]
 		checkBox btnJudgeLinkKey "Link?" \
-		pos:[15,168] tooltip:"是否存在Link帧?" checked:false 
+		pos:[15,102] tooltip:"是否存在Link帧?" checked:false 
 		button btnSelBeforeKeys " " \
-		pos:[65,160] width:30 height:30 toolTip:"选择滑条前面关键帧" border:false
+		pos:[70,95] width:30 height:30 toolTip:"选择滑条前面关键帧" border:false
 		button btnSelAllKeys " " \
-		pos:[95,160] width:30 height:30 toolTip:"选择所有关键帧" border:false
+		pos:[100,95] width:30 height:30 toolTip:"选择所有关键帧" border:false
 		button btnSelAfterKeys " " \
-		pos:[125,160] width:30 height:30 toolTip:"选择滑条后面关键帧" border:false
+		pos:[130,95] width:30 height:30 toolTip:"选择滑条后面关键帧" border:false
 		button btnMoveKeys " " width:30 height:30 \
-		pos:[155,160] toolTip:"移动关键帧,\r\n左键带帧栏范围增减,\r\n右键范围不变~" border:false
-	)
-	group ""
-	(
-		HyperLink lnkLink "----  | 2019.9  miHoYo_Bullet.S |  - ？ -" pos:[7,215]
+		pos:[160,95] toolTip:"移动关键帧,\r\n左键带帧栏范围增减,\r\n右键范围不变~" border:false
+	
+	groupbox gbxMinTools "小工具" pos:[200,5] width:145 height:200
+	
+		button btnClearSelKeys "▲清帧" tooltip:"清除关键帧选择 (非删除帧)" \
+		pos:[205,25] height:20 width:50
+		button btnToKeysRange "☀卡帧" tooltip:"帧范围变成首尾帧 !\r\n小心无限帧~ 后果未知..." \
+		pos:[205,45] height:20 width:50
+		button btnDelOutKeys " ✖删帧" height:20 width:50 \
+		pos:[205,65] toolTip:"左键清除选择帧\r\n右键清范围外帧(无限帧)"
+		button btnFreezeMesh " ✲ 冻模" height:20 width:50 \
+		pos:[205,85] toolTip:"冻结模型"
+		button btnBoneTraj "◆ Bone轨迹"  width:80 height:20 \
+		pos:[260,25] toolTip:"切换显示Bone轨迹,\r\n右键清除所有Bone轨迹"
+		button btnBipedTraj "★ Biped轨迹"  width:80 height:20 \
+		pos:[260,45] toolTip:"左键切换显示单个Biped轨迹,\r\n右键切换显示所有Biped轨迹~"
+		button btnSelBoneBiped "☑ 选骨" height:20 width:50 \
+		pos:[205,125] toolTip:"左键选择所有biped\r\n右键选择所有bone"
+		button btnHideBones "☁ 藏骨" height:20 width:50 \
+		pos:[205,105] toolTip:"隐藏骨骼"
+	
+	groupbox gbxTips "" pos:[5,135] width:190 height:70
+	
+		HyperLink lnkLink "---  | 2019.9  miHoYo_Bullet.S |  - ？ --"
 		color:(color 255 20 100) hovercolor:(color 255 0 255) visitedcolor:(color 255 20 100) \
-		address:"https://space.bilibili.com/2031113"
+		pos:[7,145] address:"https://space.bilibili.com/2031113"
 		label labmiHoYo "--- TECH OTAKUS SAVE THE WORLD --" \
-		pos:[7,235] width:190
+		pos:[7,165]
 		label labTips "---- 未选即处理全部, 注意无限帧! --" \
-		pos:[7,255]  height:15 width:190
-	)
+		pos:[7,185]
 ----------------------------------UI及作者ID------------------------------------------------
 	Fn CleanOutRangeKeys inputObject =  ---清理无限帧,以前收集的,找不到来源了,大概是遍历子动画
 	(
@@ -350,7 +358,7 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 		(
 			(selection.count == 0):
 			(
-				for i in (objects as array) do 
+				for i in (objects as array) where (i.ishidden == false) do 
 				(
 					if rolloutBulletKeyTools.btnJudgeLinkKey.checked == false then fnAddKyes i 0
 					else 
@@ -359,7 +367,7 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 			)
 			default:
 			(
-				for i in (selection as array) do 
+				for i in (selection as array) where (i.ishidden == false) do 
 				(
 					if rolloutBulletKeyTools.btnJudgeLinkKey.checked == false then fnAddKyes i 0
 					else 
@@ -371,8 +379,8 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 	
 	fn fnChangetRangeTime =   ------------关键帧数字随滑条改变
 	(
-		rolloutBulletKeyTools.edtStartTime.text = animationrange.start as string
-		rolloutBulletKeyTools.edtEndTime.text = animationrange.end as string
+		rolloutBulletKeyTools.spiStartTime.value = animationrange.start
+		rolloutBulletKeyTools.spiEndTime.value = animationrange.end
 	)
 
 	fn fnSelLinkKeys keyFirst KeyEnd symbol =  ---------------选择link帧方法
@@ -396,7 +404,7 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 	(
 		fn fnSelectKeys keyFirst KeyEnd symbol =  -------因为有选中和没选择状态, 所以加一个方法精简下
 		(
-			for i in objects do deselectKeys i          --清除之前选中的关键帧
+			for i in objects where (i.ishidden == false) do deselectKeys i          --清除之前选中的关键帧
 			if arrKeysTime.count != 0 then
 			(
 				selectkeys $ keyFirst KeyEnd  -------------选中正常帧
@@ -417,7 +425,7 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 		(
 			(selection.count == 0):  ----------判断是否有选中物体
 			(
-				select objects    ---没有选择物体则选择所有物体
+				actionMan.executeAction 0 "40021"    ---没有选择物体则选择所有物体
 				fnSelectKeys keyFirst KeyEnd symbol
 			)
 			default:  ----------------
@@ -481,7 +489,7 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 	fn fnMoveBipedKeys offsetFrame =  -------移动Biped帧
 	(
 		bipedRoot = #()   -------判断选择了几个biped骨架
-		for i in selection where classof i == Biped_Object do  
+		for i in selection where ((classof i == Biped_Object) and (i.ishidden == false)) do  
 		(
 			appendIfUnique bipedRoot i.controller.rootNode  --添加到骨架数组
 		)
@@ -579,6 +587,7 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 		fnSaveConfig ()  ---------------脚本位置赋值
 		fnSetConfig ()  ----------------保存位置信息到ini文件
 		registerTimeCallback fnChangetRangeTime  -------------帧范围改变添加回调
+		rolloutBulletKeyTools.gbxMinTools.visible  = false
 	)
 	
 	on rolloutBulletKeyTools close do -- 关闭记忆浮动窗口位置
@@ -587,10 +596,34 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 		fnSetConfig ()
 	)
 	
+	on rolloutBulletKeyTools mbuttondown pos do 
+	(
+		try (destroydialog rolloutBulletKeyTools) catch ()
+	)
+	
+	on rolloutBulletKeyTools lbuttondown posMou do
+	(
+		posMouMoved = posMou
+		fnMouseState = on
+	)
+	
+	on rolloutBulletKeyTools lbuttonup posMou do
+	(
+		fnMouseState = off
+	)
+	
+	on rolloutBulletKeyTools mouseMove pos do
+	(
+		if fnMouseState == on then
+		(
+			SetDialogPos rolloutBulletKeyTools (mouse.screenpos - posMouMoved)			
+		)
+	)
+	
 	on btnSelBoneBiped pressed do ----选择bone或者biped
 	(
 		clearselection ()
-		for o in objects do 
+		for o in objects where (o.ishidden == false) do 
 		(
 			if classof o == Biped_Object then selectmore o
 		)
@@ -599,13 +632,13 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 	on btnSelBoneBiped rightclick do ----选择bone或者biped
 	(
 		clearselection ()
-		for o in objects do 
+		for o in objects where (o.ishidden == false) do 
 		(
 			if classof o == BoneGeometry then selectmore o
 		)
 	)
 
-	on edtStartTime entered valTime do  --------初始帧定位到输入的帧数
+	on spiStartTime changed valTime do  --------初始帧定位到输入的帧数
 	(		
 		local rangeStart = valTime as time
 		if ((valTime != ".") and (valTime as time != undefined) and \
@@ -616,7 +649,7 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 		else messageBox "----------------------\r\n请输入正确帧数!"
 	)
 
-	on edtEndTime entered valTime do  --------初始帧定位到输入的帧数
+	on spiEndTime changed valTime do  --------初始帧定位到输入的帧数
 	(		
 		local rangEnd = valTime as time
 		if ((valTime != ".") and (valTime as time != undefined) and \ 
@@ -627,12 +660,12 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 		else messageBox "----------------------\r\n请输入正确帧数!"
 	)
 	
-	on btnFnFrameTicks pressed do  -------------切换整数帧小数帧,方便拖动滑条平滑预览
+	on btnFnFrameTicks rightclick do  -------------切换整数帧小数帧,方便拖动滑条平滑预览
 	(
 		if timeDisplayMode != #frameTicks then 
 		(
 			timeDisplayMode = #frameTicks
-			btnFnFrameTicks.text = "(=`▽`)"
+			btnFnFrameTicks.text = " (=`▽`)"
 		)
 		else 
 		(
@@ -641,6 +674,22 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 		)
 		slidertime -= 1
 		slidertime += 1  ----------默认改了要划一下滑条才生效,脚本直接操作了~~没找到refresh的
+	)
+	
+	on btnFnFrameTicks pressed do  -------------切换整数帧小数帧,方便拖动滑条平滑预览
+	(
+		if rolloutBulletKeyTools.gbxMinTools.visible  == true then
+		(
+			rolloutBulletKeyTools.width = 200
+			rolloutBulletKeyTools.gbxMinTools.visible  = false
+			btnFnFrameTicks.text = "✧(≖ ◡ ≖"
+		)
+		else
+		(
+			rolloutBulletKeyTools.width = 350
+			rolloutBulletKeyTools.gbxMinTools.visible  = true
+			btnFnFrameTicks.text = "(= `▽`)"
+		)
 	)
 
 	on btnBoneTraj pressed do ------显示bone的轨迹
@@ -691,13 +740,23 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 
 	on btnBipedTraj rightclick do
 	(
-		for i in (selection as array) where (selection.count != 0) do
+		-- bipedRoot = #()   -------判断选择了几个biped骨架
+		if (selection.count > 0) then
 		(
-			if classof i == Biped_Object then
+			-- for i in (selection as array) where classof i == Biped_Object do  
+			-- (
+			-- 	appendIfUnique bipedRoot i.controller.rootNode  --添加到骨架数组
+			-- )
+			for i in (selection as array) do 
 			(
-				trajDisFn = i.controller.rootNode.controller.displayTrajectories
-				if trajDisFn == true then i.controller.rootNode.controller.displayTrajectories = false
-				else i.controller.rootNode.controller.displayTrajectories = true
+				if (classof i == Biped_Object) then
+				(
+					nodeTemp = i.controller.rootNode
+					trajDisFn = nodeTemp.controller.displayTrajectories
+					if trajDisFn == true then nodeTemp.controller.displayTrajectories = false
+					else nodeTemp.controller.displayTrajectories = true
+					exit
+				)
 			)
 		)
 	)
@@ -738,7 +797,7 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 		(
 			if selection.count != 0 then
 			(
-				for i in selection do
+				for i in selection where (i.ishidden == false) do
 				(
 					if classof i != Biped_Object then
 					(
@@ -757,7 +816,7 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 			)
 			else  ---跟上面一样,只是对所有物体
 			(
-				for i in objects do
+				for i in objects where (i.ishidden == false) do
 				(
 					if classof i != Biped_Object then
 					(
@@ -786,7 +845,7 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 		(
 			if selection.count != 0 then
 			(
-				for i in selection do
+				for i in selection where (i.ishidden == false) do
 				(
 					if classof i != Biped_Object then
 					(
@@ -805,7 +864,7 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 			)
 			else 
 			(
-				for i in objects do
+				for i in objects where (i.ishidden == false) do
 				(
 					if classof i != Biped_Object then
 					(
@@ -909,7 +968,7 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 		fnCollectKeys ()
 		if arrKeysTime.count != 0 then  ----清除非link帧
 		(
-			for i in objects do deselectKeys i
+			for i in objects where (i.ishidden == false) do deselectKeys i
 			if arrLinkKeys.count != 0 then
 			(
 				for i in arrLinkKeys do i.selected = false
@@ -990,7 +1049,7 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 
 	on btnDelOutKeys pressed do with undo on-----------清理选择帧
 	(
-		for o in selection where classof o == Biped_Object do 
+		for o in selection where ((classof o == Biped_Object) and (o.ishidden == false)) do 
 		(
 			if classof o.controller == Vertical_Horizontal_Turn then  --清理质心帧
 			(
@@ -1011,12 +1070,29 @@ rollout rolloutBulletKeyTools "关键小帧工具 v0.6" width:200 height:280
 				)
 			)
 		)
-		for o in selection where classof o != Biped_Object do  ---清理非biped帧
+		for o in selection where ((classof o != Biped_Object) and (o.ishidden == false)) do  ---清理非biped帧
 		(
 			deleteKeys o #selection
 		)
 	)
+
+	on btnHideBones pressed do
+	(
+		if hideByCategory.bones == false then 
+		(
+			hideByCategory.bones = true
+			btnHideBones.text = " ☼ 显骨"
+		)
+		else 
+		(
+			hideByCategory.bones = false
+			btnHideBones.text = "☁ 藏骨"
+		)
+-- 		redrawviews()
+		slidertime -= 1
+		slidertime += 1
+	)
 )
 
-Createdialog rolloutBulletKeyTools fgcolor:(color 255 20 100) pos:iniPos
+Createdialog rolloutBulletKeyTools fgcolor:(color 255 20 100) pos:iniPos style:#()
 clearListener()  ---------清除侦听器
