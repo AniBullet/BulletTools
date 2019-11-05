@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-09-28 11:48:53
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-11-03 02:52:50
+ * @LastEditTime: 2019-11-05 20:56:00
  * @Email: animator.bullet@foxmail.com
  */
 -- getKeyTime $.rotation.controller 1
@@ -64,21 +64,162 @@ fn fnSetConfig =  --保存参数,脚本位置
 	SetINISetting BulletConfig "BulletKeyToolsSet"  "Pos" (iniPos as string)
 )
 ---------------配合BulletTools工具的ini文件保存位置信息-----------------
+
+-------------------帧率,播放速度--------------------------------------------------------------
+Global valueFps
+Global valuePlaySpeed = ""
+Global strCurrentFps = framerate as string + " FPS"
+
+rollout rolCustomFps ""
+(
+    edittext edtFpsValue "FPS: "  pos:[10,10] width:60 usePercentageWidth:true percentageWidth:44.0 labelOnTop:false text:"60" bold:true readOnly:false --帧率数值
+    button btnSetFps "Set" pos:[80,8]
+    label labTips strCurrentFps
+
+    on rolCustomFps open do 
+    (
+        edtFpsValue.text = framerate as string
+        labTips.text = "当前帧率: " + framerate as string + " FPS"
+        valueFps = framerate as integer
+    )
+
+    on edtFpsValue entered val do 
+    (
+        if ((val != ".") and (val as integer != undefined) and (val != "") and (val as integer >= 0)) then
+        (
+            valueFps = (val as integer)
+        )
+        else messagebox "---------------------------\r\n请输入正确帧率数值\r\n"
+    )
+    on btnSetFps pressed do 
+    (
+        framerate = valueFps
+        labTips.text = "当前帧率: " + framerate as string + " FPS"
+        slidertime -= 1
+		slidertime += 1
+    )
+)
+
+fn fnSetFps numFps =
+(
+    framerate = numFps
+    valueFps = numFps
+    strCurrentFps = framerate as string + " FPS"
+	rolloutBulletKeyTools.btnSetFpsAndSpeed.text = "  |  " + strCurrentFps + "  | " + valuePlaySpeed + " |"
+    slidertime -= 1
+    slidertime += 1
+)
+
+fn judgePlaySpeedValue =
+(
+    case of
+    (
+        (timeConfiguration.playbackSpeed == 1):(valuePlaySpeed = "--1/4x--")
+        (timeConfiguration.playbackSpeed == 2):(valuePlaySpeed = "--1/2x--")
+        (timeConfiguration.playbackSpeed == 3):(valuePlaySpeed = "-- 1x --")
+        (timeConfiguration.playbackSpeed == 4):(valuePlaySpeed = "-- 2x --")
+        (timeConfiguration.playbackSpeed == 5):(valuePlaySpeed = "-- 4x --")
+    )
+)
+
+fn fnSetSpeed numSpeed =
+(
+    timeConfiguration.playbackSpeed = numSpeed
+    judgePlaySpeedValue ()
+	rolloutBulletKeyTools.btnSetFpsAndSpeed.text = "  |  " + strCurrentFps + "  | " + valuePlaySpeed + " |"
+)
+
+rcmenu menuSetFps
+(
+    menuItem menuCurrentFps "" enabled:false
+    menuItem menuSet60Fps "-- 60 Fps --"
+    menuItem menuSet30Fps "-- 30 Fps --"
+    menuItem menuSet24Fps "-- 24 Fps --"
+    separator menuSepCustom
+    menuItem menuCustomFps "自定义帧率"
+
+    on menuSetFps open do 
+    (
+        menuSetFps.menuCurrentFps.text = "当前帧率: " + framerate as string + " FPS"
+    )
+
+    on menuSet60Fps picked do 
+    (
+        fnSetFps 60
+    )
+    on menuSet30Fps picked do
+    (
+        fnSetFps 30
+    )
+    on menuSet24Fps picked do 
+    (
+        fnSetFps 24
+    )
+
+    on menuCustomFps picked do
+    (
+        try (destroyDialog rolCustomFps) catch()
+        createdialog rolCustomFps 120 55 fgcolor:(color 255 20 100) pos:[mouse.screenpos.x,mouse.screenpos.y]
+    )
+)
+
+rcmenu menuSetSpeed
+(
+	menuItem menuCurrentSpeed "" enabled:false
+	menuItem menuSet14Speed "-- 1/4x --"
+	menuItem menuSet12Speed "-- 1/2x --"
+	separator menuSepSpeedLow
+	menuItem menuSet1Speed "--  1x  --"
+	separator menuSepSpeedHigh
+	menuItem menuSet2Speed "--  2x  --"
+	menuItem menuSet4Speed "--  4x  --"
+
+	on menuSetSpeed open do 
+	(
+		judgePlaySpeedValue ()
+		menuSetSpeed.menuCurrentSpeed.text = "当前播速: " + valuePlaySpeed
+	)
+
+	on menuSet14Speed picked do 
+	(
+		fnSetSpeed 1
+	)
+	on menuSet12Speed picked do
+	(
+		fnSetSpeed 2
+	)
+	on menuSet1Speed picked do 
+	(
+		fnSetSpeed 3
+	)
+	on menuSet2Speed picked do 
+	(
+		fnSetSpeed 4
+	)
+	on menuSet4Speed picked do 
+	(
+		fnSetSpeed 5
+	)
+)
+------------------帧率,播放速度------------------------------------------------------------
+
+-------------主UI-----------------------------------------------------------------
 rollout rolloutBulletKeyTools "" width:200 height:210
 (
 	---------------------------------UI--------------------------------------
-	groupbox gbxMainUI "[ K 帧工具_v0.7 ] ------ 中键关闭" pos:[5,5] width:190 height:130
+	groupbox gbxMainUI "[ K 帧工具_v0.7 ] ------ 中键关闭" pos:[5,5] width:190 height:150
 	
-		label lblRangeTimeText "| 起始帧 |       | 结尾帧 |" pos:[10,25] width:180
+		label lblRangeTimeText "| 起始帧 |  ↓  | 结尾帧 |" pos:[10,25] width:180 \
 		spinner spiStartTime "" pos:[10,43] width:50 type:#integer \
 		range:[-999999999,999999999,animationrange.start] scale:1
 -- 		setKeyBrackets:true
-		label lblTo "▃"  pos:[65,36]
+		button btnTo "▃"  pos:[60,38] tooltip:"整数小数帧切换,\r\n平滑拖帧看卡顿" \
+		width:20 height:20 border:false 
 		spinner spiEndTime "" pos:[80,43] width:50 type:#integer \
 		range:[-999999999,999999999,animationrange.end] scale:1
 -- 		setKeyBrackets:true
 		button btnFnFrameTicks "✧(≖ ◡ ≖" pos:[135,30] width:55 height:30 border:false \
-		tooltip:"点我点我点我~\r\n发现新世界!!!~\r\n右键切换小数帧\r\n平滑拖帧看卡顿!"
+		tooltip:"点我点我点我~\r\n发现新世界!!!~\r\n左点右点都有惊喜!"
 		edittext edtMoveKey "移动" width:70 usePercentageWidth:true percentageWidth:44.0 \ 
 		pos:[10,72] labelOnTop:false text:"5f" bold:true readOnly:false 
 		button btnSet5 "5f" width:35 pos:[90,70]
@@ -86,7 +227,7 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 		button btnSetOpposite "负" width:30 pos:[160,70]
 -- 		checkbox <name> [<caption>] [checked:<boolean>]
 		checkBox btnJudgeLinkKey "Link?" \
-		pos:[15,102] tooltip:"是否存在Link帧?" checked:false 
+		pos:[18,104] tooltip:"是否存在Link帧?" checked:false 
 		button btnSelBeforeKeys " " \
 		pos:[70,95] width:30 height:30 toolTip:"选择滑条前面关键帧" border:false
 		button btnSelAllKeys " " \
@@ -95,34 +236,38 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 		pos:[130,95] width:30 height:30 toolTip:"选择滑条后面关键帧" border:false
 		button btnMoveKeys " " width:30 height:30 \
 		pos:[160,95] toolTip:"移动关键帧,\r\n左键带帧栏范围增减,\r\n右键范围不变~" border:false
+-- 		label labTips "--- 未选即处理全部, 注意无限帧! --" \
+-- 		pos:[10,130]
+		button btnSetFpsAndSpeed " " pos:[80,130] width:110 height:20 \
+		toolTip:"左键设置帧率\r\n右键播放速度" border:false
+		button btnQuickSave "✪ 快速另存" pos:[10,130] width:70 height:20 \
+		toolTip:"快速另存备份" border:false
 	
 	groupbox gbxMinTools "小工具" pos:[200,5] width:145 height:200
 	
-		button btnClearSelKeys "▲清帧" tooltip:"清除关键帧选择 (非删除帧)" \
-		pos:[205,25] height:20 width:50
-		button btnToKeysRange "☀卡帧" tooltip:"帧范围变成首尾帧 !\r\n小心无限帧~ 后果未知..." \
-		pos:[205,45] height:20 width:50
-		button btnDelOutKeys " ✖删帧" height:20 width:50 \
-		pos:[205,65] toolTip:"左键清除选择帧\r\n右键清范围外帧(无限帧)"
-		button btnFreezeMesh " ✲ 冻模" height:20 width:50 \
-		pos:[205,85] toolTip:"冻结模型"
 		button btnBoneTraj "◆ Bone轨迹"  width:80 height:20 \
 		pos:[260,25] toolTip:"切换显示Bone轨迹,\r\n右键清除所有Bone轨迹"
 		button btnBipedTraj "★ Biped轨迹"  width:80 height:20 \
 		pos:[260,45] toolTip:"左键切换显示单个Biped轨迹,\r\n右键切换显示所有Biped轨迹~"
-		button btnSelBoneBiped "☑ 选骨" height:20 width:50 \
-		pos:[205,125] toolTip:"左键选择所有biped\r\n右键选择所有bone"
+		button btnClearSelKeys "▲ 消帧" tooltip:"取消关键帧选择 (非删除帧)" \
+		pos:[205,25] height:20 width:50
+		button btnToKeysRange "〇 圈帧" tooltip:"帧范围变成首尾帧 !\r\n小心无限帧~ 后果未知..." \
+		pos:[205,45] height:20 width:50
+		button btnDelOutKeys "✖ 删帧" height:20 width:50 \
+		pos:[205,65] toolTip:"左键清除选择帧\r\n右键清范围外帧(无限帧)"
+		button btnFreezeMesh "✲ 冻模" height:20 width:50 \
+		pos:[205,90] toolTip:"冻结模型"
 		button btnHideBones "☁ 藏骨" height:20 width:50 \
-		pos:[205,105] toolTip:"隐藏骨骼"
+		pos:[205,110] toolTip:"隐藏骨骼"
+		button btnSelBoneBiped "☑ 选骨" height:20 width:50 \
+		pos:[205,130] toolTip:"左键选择所有biped\r\n右键选择所有bone"
 	
-	groupbox gbxTips "" pos:[5,135] width:190 height:70
+	groupbox gbxTips "" pos:[5,155] width:190 height:50
 	
 		HyperLink lnkLink "---  | 2019.9  miHoYo_Bullet.S |  - ？ --"
 		color:(color 255 20 100) hovercolor:(color 255 0 255) visitedcolor:(color 255 20 100) \
-		pos:[7,145] address:"https://space.bilibili.com/2031113"
+		pos:[7,165] address:"https://space.bilibili.com/2031113"
 		label labmiHoYo "--- TECH OTAKUS SAVE THE WORLD --" \
-		pos:[7,165]
-		label labTips "---- 未选即处理全部, 注意无限帧! --" \
 		pos:[7,185]
 ----------------------------------UI及作者ID------------------------------------------------
 	Fn CleanOutRangeKeys inputObject =  ---清理无限帧,以前收集的,找不到来源了,大概是遍历子动画
@@ -574,6 +719,28 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 		if (getNodeByName deleteTrajName) != undefined then (delete (getNodeByName deleteTrajName))
 	)
 
+	fn fnQuickSave =
+	(
+		local nameCurrentFile = getFilenameFile maxFileName
+		local strNameSplit = "_Backup"
+		local suffixFile = 1
+		local fileSave = ""
+
+		if (matchPattern nameCurrentFile pattern:"*_Backup*" ignorCase:false) then
+		(
+			numTempName = findstring nameCurrentFile "_Backup"
+			numTempVer = substring nameCurrentFile (numTempName + 7) nameCurrentFile.count
+			nameCurrentFile = substring nameCurrentFile 1 (numTempName - 1)
+			suffixFile = if numTempVer as integer != undefined then numTempVer as integer else 1
+		)
+		while (doesFileExist (maxFilePath + nameCurrentFile + strNameSplit + (suffixFile as string) + ".max")) == true do
+		(
+			suffixFile += 1
+		)
+		fileSave = maxFilePath + nameCurrentFile + strNameSplit + (suffixFile as string) + ".max"
+		saveMaxFile fileSave
+	)
+
 	on rolloutBulletKeyTools open do  ----打开脚本时操作
 	(------刷新图标, 图标是max自带的,主要是懒得做
 		btnSelBeforeKeys.images = #("VCRControls_24i.bmp","VCRControls_24i.bmp",28,3,3,3,3,true,true) 
@@ -588,6 +755,8 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 		fnSetConfig ()  ----------------保存位置信息到ini文件
 		registerTimeCallback fnChangetRangeTime  -------------帧范围改变添加回调
 		rolloutBulletKeyTools.gbxMinTools.visible  = false
+		judgePlaySpeedValue ()  -----判断播放速度
+		rolloutBulletKeyTools.btnSetFpsAndSpeed.text = "  |  " + strCurrentFps + "  | " + valuePlaySpeed + " |"
 	)
 	
 	on rolloutBulletKeyTools close do -- 关闭记忆浮动窗口位置
@@ -595,7 +764,7 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 		iniPos = (GetDialogPos rolloutBulletKeyTools)
 		fnSetConfig ()
 	)
-	
+	-----------------------------------------------------------------------------------------
 	on rolloutBulletKeyTools mbuttondown pos do 
 	(
 		try (destroydialog rolloutBulletKeyTools) catch ()
@@ -619,7 +788,7 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 			SetDialogPos rolloutBulletKeyTools (mouse.screenpos - posMouMoved)			
 		)
 	)
-	
+	---------------------上面设置拖动脚本窗口,去掉标题栏后默认无法拖动---------------------
 	on btnSelBoneBiped pressed do ----选择bone或者biped
 	(
 		clearselection ()
@@ -660,17 +829,17 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 		else messageBox "----------------------\r\n请输入正确帧数!"
 	)
 	
-	on btnFnFrameTicks rightclick do  -------------切换整数帧小数帧,方便拖动滑条平滑预览
+	on btnTo pressed do  -------------切换整数帧小数帧,方便拖动滑条平滑预览
 	(
 		if timeDisplayMode != #frameTicks then 
 		(
 			timeDisplayMode = #frameTicks
-			btnFnFrameTicks.text = " (=`▽`)"
+			btnTo.text = "▁"
 		)
 		else 
 		(
 			timeDisplayMode = #frames
-			btnFnFrameTicks.text = "✧(≖ ◡ ≖"
+			btnTo.text = "▃"
 		)
 		slidertime -= 1
 		slidertime += 1  ----------默认改了要划一下滑条才生效,脚本直接操作了~~没找到refresh的
@@ -688,7 +857,7 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 		(
 			rolloutBulletKeyTools.width = 350
 			rolloutBulletKeyTools.gbxMinTools.visible  = true
-			btnFnFrameTicks.text = "(= `▽`)"
+			btnFnFrameTicks.text = "( = `▽`)"
 		)
 	)
 
@@ -962,6 +1131,10 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 			)
 		)
 	)
+	
+	on btnSetFpsAndSpeed pressed do popupMenu menuSetFps
+		
+	on btnSetFpsAndSpeed rightclick do popupMenu menuSetSpeed
 
 	on btnClearSelKeys pressed do  ---------------------清除帧选择
 	(
@@ -1064,7 +1237,7 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 				biped.deleteKeys o.controller #selection
 				subanimBipedScale = GetSubAnim o.controller[1] 1
 				if ((subanimBipedScale != undefined) and \
-				(GetSubAnimName subanimBipedScale 1 == #ScaleXYZ)) then  --清理biped的所方针
+				(GetSubAnimName subanimBipedScale 1 == #ScaleXYZ)) then  --清理biped的缩放针
 				(
 					deleteKeys subanimBipedScale.controller #selection
 				)
@@ -1092,7 +1265,27 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 		slidertime -= 1
 		slidertime += 1
 	)
-)
+	
+	on btnHideBones rightclick do
+	(
+		for o in objects where ((classof o == BoneGeometry) and (o.isHidden == false)) do
+		(
+			o.isHidden = true
+		)
+	)
 
+	on btnQuickSave pressed do 
+	(
+		if maxFilePath == "" then 
+		(
+			messagebox "------------------------------------\r\n当前场景未保存过,\r\n请先右键点击保存初始版本~"
+		)
+		else fnQuickSave ()
+	)
+	on btnQuickSave rightclick do 
+	(
+		max file saveas
+	)
+)
 Createdialog rolloutBulletKeyTools fgcolor:(color 255 20 100) pos:iniPos style:#()
 clearListener()  ---------清除侦听器

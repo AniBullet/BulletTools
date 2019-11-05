@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-10-08 12:39:08
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-10-27 19:26:38
+ * @LastEditTime: 2019-11-04 12:48:03
  * @Email: animator.bullet@foxmail.com
  */
 
@@ -47,38 +47,4 @@ fn fnSetFps numFps =
     strCurrentFps = "当前帧率: " + framerate as string + " FPS"
     slidertime -= 1
     slidertime += 1
-)
-
-rcmenu menuSetFps
-(
-    menuItem menuCurrentFps "" enabled:false
-    menuItem menuSet60Fps "-- 60 Fps --"
-    menuItem menuSet30Fps "-- 30 Fps --"
-    menuItem menuSet24Fps "-- 24 Fps --"
-    separator menuSepCustom
-    menuItem menuCustomFps "自定义帧率"
-
-    on menuSetFps open do 
-    (
-        menuSetFps.menuCurrentFps.text = "当前帧率: " + framerate as string + " FPS"
-    )
-
-    on menuSet60Fps picked do 
-    (
-        fnSetFps 60
-    )
-    on menuSet30Fps picked do
-    (
-        fnSetFps 30
-    )
-    on menuSet24Fps picked do 
-    (
-        fnSetFps 24
-    )
-
-    on menuCustomFps picked do
-    (
-        try (destroyDialog rolCustomFps) catch()
-        createdialog rolCustomFps 120 55 fgcolor:(color 255 20 147)
-    )
 )
