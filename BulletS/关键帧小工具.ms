@@ -204,12 +204,12 @@ rcmenu menuSetSpeed
 ------------------帧率,播放速度------------------------------------------------------------
 
 -------------主UI-----------------------------------------------------------------
-rollout rolloutBulletKeyTools "" width:200 height:210
+rollout rolloutBulletKeyTools "" width:200 height:235
 (
 	---------------------------------UI--------------------------------------
-	groupbox gbxMainUI "[ K 帧工具_v0.7 ] ------ 中键关闭" pos:[5,5] width:190 height:150
+	groupbox gbxMainUI "[ K 帧工具_v0.7 ] ------ 中键关闭" pos:[5,5] width:190 height:175
 	
-		label lblRangeTimeText "| 起始帧 |  ↓  | 结尾帧 |" pos:[10,25] width:180 \
+		label lblRangeTimeText "| 起始帧 |      | 结尾帧 |" pos:[10,25] width:180 \
 		spinner spiStartTime "" pos:[10,43] width:50 type:#integer \
 		range:[-999999999,999999999,animationrange.start] scale:1
 -- 		setKeyBrackets:true
@@ -219,7 +219,7 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 		range:[-999999999,999999999,animationrange.end] scale:1
 -- 		setKeyBrackets:true
 		button btnMagicBtn "✧(≖ ◡ ≖" pos:[135,30] width:55 height:30 border:false \
-		tooltip:"点我点我点我~\r\n左点小工具,\r\n右点csTool精简版,"
+		tooltip:"点我点我点我~\r\n左点小工具,\r\n右点帮助说明."
 		edittext edtMoveKey "移动" width:70 usePercentageWidth:true percentageWidth:44.0 \ 
 		pos:[10,72] labelOnTop:false text:"5f" bold:true readOnly:false 
 		button btnSet5 "5f" width:35 pos:[90,70]
@@ -238,12 +238,14 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 		pos:[160,95] toolTip:"移动关键帧,\r\n左键带帧栏范围增减,\r\n右键范围不变~" border:false
 -- 		label labTips "--- 未选即处理全部, 注意无限帧! --" \
 -- 		pos:[10,130]
-		button btnSetFpsAndSpeed " " pos:[80,130] width:110 height:20 \
+		button btnCSTools " ♥  CS选择" pos:[10,130] width:60 height:20 \
+		tooltip:"CS选择工具" border:false
+		button btnSetFpsAndSpeed " " pos:[80,150] width:110 height:20 \
 		toolTip:"左键设置帧率\r\n右键播放速度" border:false
-		button btnQuickSave "✪ 快速另存" pos:[10,130] width:70 height:20 \
-		toolTip:"快速另存备份" border:false
+		button btnQuickSave "✪ 快速备份" pos:[10,150] width:70 height:20 \
+		toolTip:"左键快速备份\r\n右键另存文件" border:false
 	
-	groupbox gbxMinTools "小工具" pos:[200,5] width:145 height:200
+	groupbox gbxMinTools "小工具" pos:[200,5] width:145 height:225
 	
 		button btnBoneTraj "◆ Bone轨迹"  width:80 height:20 \
 		pos:[260,25] toolTip:"切换显示Bone轨迹,\r\n右键清除所有Bone轨迹"
@@ -253,7 +255,7 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 		pos:[260,65] tooltip:"整数小数帧切换,\r\n平滑拖帧看卡顿"
 		button btnClearSelKeys "▲ 消帧" tooltip:"取消关键帧选择 (非删除帧)" \
 		pos:[205,25] height:20 width:50
-		button btnToKeysRange "〇 圈帧" tooltip:"帧范围变成首尾帧 !\r\n小心无限帧~ 后果未知..." \
+		button btnToKeysRange "〇 卡帧" tooltip:"帧范围变成首尾帧 !\r\n小心无限帧~ 后果未知..." \
 		pos:[205,45] height:20 width:50
 		button btnDelOutKeys "✖ 删帧" height:20 width:50 \
 		pos:[205,65] toolTip:"左键清除选择帧\r\n右键清范围外帧(无限帧)"
@@ -264,13 +266,13 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 		button btnSelBoneBiped "☑ 选骨" height:20 width:50 \
 		pos:[205,130] toolTip:"左键选择所有biped\r\n右键选择所有bone"
 	
-	groupbox gbxTips "" pos:[5,155] width:190 height:50
+	groupbox gbxTips "" pos:[5,180] width:190 height:50
 	
 		HyperLink lnkLink "---  | 2019.9  miHoYo_Bullet.S |  - ？ --"
 		color:(color 255 20 100) hovercolor:(color 255 0 255) visitedcolor:(color 255 20 100) \
-		pos:[7,165] address:"https://space.bilibili.com/2031113"
+		pos:[7,190] address:"https://space.bilibili.com/2031113"
 		label labmiHoYo "--- TECH OTAKUS SAVE THE WORLD --" \
-		pos:[7,185]
+		pos:[7,210]
 ----------------------------------UI及作者ID------------------------------------------------
 	Fn CleanOutRangeKeys inputObject =  ---清理无限帧,以前收集的,找不到来源了,大概是遍历子动画
 	(
@@ -872,7 +874,7 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 		)
 	)
 
-	on btnMagicBtn rightclick do 
+	on btnCSTools pressed do 
 	(
 		FileIn ((getDir #scripts) + "\\BulletScripts" + "\\cstools.ms")
 	)
