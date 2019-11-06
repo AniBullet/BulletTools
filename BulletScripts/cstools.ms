@@ -2648,10 +2648,10 @@ if headvalue==1 then
 rollout cstoolroll "CS工具" width:120 height:515
 (
 	bitmap Background    "Bitmap"    pos:[0, 24] width:117 height:240       transparent:(color 0 255 0)
-	imgtag leftfootA_btn  "leftfoota" pos:[leftx,lefty] width:22  height:18      bitmap:image_leftfootA  transparent:(color 0 255 0)
-	imgtag leftfootB_btn  "leftfootb" pos:[leftx,lefty+18] width:22  height:15  bitmap:image_leftfootB  transparent:(color 0 255 0)
-	imgtag leftfootC_btn  "leftfootc" pos:[leftx+22,lefty] width:21  height:33  bitmap:image_leftfootC  transparent:(color 0 255 0)
-	imgtag leftfootD_btn  "leftfootd" pos:[leftx+43,lefty] width:15  height:33  bitmap:image_leftfootD  transparent:(color 0 255 0)
+	-- imgtag leftfootA_btn  "leftfoota" pos:[leftx,lefty] width:22  height:18      bitmap:image_leftfootA  transparent:(color 0 255 0)
+	-- imgtag leftfootB_btn  "leftfootb" pos:[leftx,lefty+18] width:22  height:15  bitmap:image_leftfootB  transparent:(color 0 255 0)
+	-- imgtag leftfootC_btn  "leftfootc" pos:[leftx+22,lefty] width:21  height:33  bitmap:image_leftfootC  transparent:(color 0 255 0)
+	-- imgtag leftfootD_btn  "leftfootd" pos:[leftx+43,lefty] width:15  height:33  bitmap:image_leftfootD  transparent:(color 0 255 0)
 
 	dropdownList bip_list "" pos:[0,1] width:55 height:22 items:#("Bip01")
 	-- button refresh_bips "R" pos:[54,1] width:25 height:20
@@ -4054,25 +4054,25 @@ fn imgrightclick bcode=
 	dialog_y=tpos.y
    ) 
 	
-	on LeftFootA_btn mouseover do (LeftFootA_btn.bitmap = image_LeftFootA2)
-	on LeftFootA_btn mouseout  do (LeftFootA_btn.bitmap = image_LeftFootA)
+	-- on LeftFootA_btn mouseover do (LeftFootA_btn.bitmap = image_LeftFootA2)
+	-- on LeftFootA_btn mouseout  do (LeftFootA_btn.bitmap = image_LeftFootA)
 
 	
-	on LeftFootB_btn mouseover do (LeftFootB_btn.bitmap = image_LeftFootB2)
-	on LeftFootB_btn mouseout  do (LeftFootB_btn.bitmap = image_LeftFootB)
+	-- on LeftFootB_btn mouseover do (LeftFootB_btn.bitmap = image_LeftFootB2)
+	-- on LeftFootB_btn mouseout  do (LeftFootB_btn.bitmap = image_LeftFootB)
 	
-	on LeftFootC_btn mouseover do (LeftFootC_btn.bitmap = image_LeftFootC2)
-	on LeftFootC_btn mouseout  do (LeftFootC_btn.bitmap = image_LeftFootC)
+	-- on LeftFootC_btn mouseover do (LeftFootC_btn.bitmap = image_LeftFootC2)
+	-- on LeftFootC_btn mouseout  do (LeftFootC_btn.bitmap = image_LeftFootC)
 
 	
-	on LeftFootD_btn mouseover do (LeftFootD_btn.bitmap = image_LeftFootD2)
-	on LeftFootD_btn mouseout  do (LeftFootD_btn.bitmap = image_LeftFootD)
+	-- on LeftFootD_btn mouseover do (LeftFootD_btn.bitmap = image_LeftFootD2)
+	-- on LeftFootD_btn mouseout  do (LeftFootD_btn.bitmap = image_LeftFootD)
 	
 
-	on LeftFootA_btn  click do if $==bipname[16] or $==bipname[15] then try( BipedPivot 1;)catch()
-	on LeftFootB_btn  click do if $==bipname[16] or $==bipname[15] then try( BipedPivot 3;)catch()
-    on LeftFootC_btn  click do if $==bipname[16] or $==bipname[15] then try( BipedPivot 6;)catch()
-    on LeftFootD_btn  click do if $==bipname[16] or $==bipname[15] then try( BipedPivot 8;)catch()
+	-- on LeftFootA_btn  click do if $==bipname[16] or $==bipname[15] then try( BipedPivot 1;)catch()
+	-- on LeftFootB_btn  click do if $==bipname[16] or $==bipname[15] then try( BipedPivot 3;)catch()
+    -- on LeftFootC_btn  click do if $==bipname[16] or $==bipname[15] then try( BipedPivot 6;)catch()
+    -- on LeftFootD_btn  click do if $==bipname[16] or $==bipname[15] then try( BipedPivot 8;)catch()
 
     on set_btn pressed do
 	(
@@ -4399,7 +4399,7 @@ on tmr1 tick do
 --
 --
 --
-createdialog cstoolroll 115 390  dialog_x dialog_y 
+createdialog cstoolroll 115 290  dialog_x dialog_y 
 
 
 --addrollout cstoolroll cstool

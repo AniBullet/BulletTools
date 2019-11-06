@@ -213,8 +213,8 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 		spinner spiStartTime "" pos:[10,43] width:50 type:#integer \
 		range:[-999999999,999999999,animationrange.start] scale:1
 -- 		setKeyBrackets:true
-		button btnTo "▃"  pos:[60,38] tooltip:"整数小数帧切换,\r\n平滑拖帧看卡顿" \
-		width:20 height:20 border:false 
+		label lblTo "▃"  pos:[65,39] tooltip:"整数小数帧切换,\r\n平滑拖帧看卡顿" \
+		width:20 height:20
 		spinner spiEndTime "" pos:[80,43] width:50 type:#integer \
 		range:[-999999999,999999999,animationrange.end] scale:1
 -- 		setKeyBrackets:true
@@ -249,6 +249,8 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 		pos:[260,25] toolTip:"切换显示Bone轨迹,\r\n右键清除所有Bone轨迹"
 		button btnBipedTraj "★ Biped轨迹"  width:80 height:20 \
 		pos:[260,45] toolTip:"左键切换显示单个Biped轨迹,\r\n右键切换显示所有Biped轨迹~"
+		button btnFnFrame "● 整小数帧" width:80 height:20 \
+		pos:[260,65] tooltip:"整数小数帧切换,\r\n平滑拖帧看卡顿"
 		button btnClearSelKeys "▲ 消帧" tooltip:"取消关键帧选择 (非删除帧)" \
 		pos:[205,25] height:20 width:50
 		button btnToKeysRange "〇 圈帧" tooltip:"帧范围变成首尾帧 !\r\n小心无限帧~ 后果未知..." \
@@ -840,17 +842,15 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 		else messageBox "----------------------\r\n请输入正确帧数!"
 	)
 	
-	on btnTo pressed do  -------------切换整数帧小数帧,方便拖动滑条平滑预览
+	on btnFnFrame pressed do  -------------切换整数帧小数帧,方便拖动滑条平滑预览
 	(
 		if timeDisplayMode != #frameTicks then 
 		(
 			timeDisplayMode = #frameTicks
-			btnTo.text = "▁"
 		)
 		else 
 		(
 			timeDisplayMode = #frames
-			btnTo.text = "▃"
 		)
 		slidertime -= 1
 		slidertime += 1  ----------默认改了要划一下滑条才生效,脚本直接操作了~~没找到refresh的
