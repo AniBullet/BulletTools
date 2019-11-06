@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-09-28 11:48:53
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-11-05 20:56:00
+ * @LastEditTime: 2019-11-06 12:19:27
  * @Email: animator.bullet@foxmail.com
  */
 -- getKeyTime $.rotation.controller 1
@@ -218,8 +218,8 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 		spinner spiEndTime "" pos:[80,43] width:50 type:#integer \
 		range:[-999999999,999999999,animationrange.end] scale:1
 -- 		setKeyBrackets:true
-		button btnFnFrameTicks "✧(≖ ◡ ≖" pos:[135,30] width:55 height:30 border:false \
-		tooltip:"点我点我点我~\r\n发现新世界!!!~\r\n左点右点都有惊喜!"
+		button btnMagicBtn "✧(≖ ◡ ≖" pos:[135,30] width:55 height:30 border:false \
+		tooltip:"点我点我点我~\r\n左点小工具,\r\n右点csTool精简版,"
 		edittext edtMoveKey "移动" width:70 usePercentageWidth:true percentageWidth:44.0 \ 
 		pos:[10,72] labelOnTop:false text:"5f" bold:true readOnly:false 
 		button btnSet5 "5f" width:35 pos:[90,70]
@@ -694,11 +694,12 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 
 	fn fnAddBipedTraj tempBiped =
 	(
-		pointTraj = point name:("Traj_" + tempBiped.name) \
-				size:0 cross:true 
+		pointTraj = point name:("Traj_" + tempBiped.name) size:0 cross:true 
 		appendIfUnique arrTraj pointTraj
 		freeze pointTraj
-		pointTraj.pos = tempBiped.center
+		arrBipedSonTemp = tempBiped.children
+		bipedTarget = arrBipedSonTemp[(arrBipedSonTemp.count + 1)/2]
+		pointTraj.transform = bipedTarget.transform
 		pointTraj.parent = tempBiped
 		layerTraj.addNode pointTraj
 		deleteKeys pointTraj #allKeys
@@ -725,18 +726,28 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 		local strNameSplit = "_Backup"
 		local suffixFile = 1
 		local fileSave = ""
+		local arrFiles = #()
+		local arrFilesNum = #()
 
-		if (matchPattern nameCurrentFile pattern:"*_Backup*" ignorCase:false) then
+		fn fnGetVerNum nameCurrentFile =
 		(
 			numTempName = findstring nameCurrentFile "_Backup"
 			numTempVer = substring nameCurrentFile (numTempName + 7) nameCurrentFile.count
-			nameCurrentFile = substring nameCurrentFile 1 (numTempName - 1)
-			suffixFile = if numTempVer as integer != undefined then numTempVer as integer else 1
 		)
-		while (doesFileExist (maxFilePath + nameCurrentFile + strNameSplit + (suffixFile as string) + ".max")) == true do
+		
+		if (matchPattern nameCurrentFile pattern:"*_Backup*" ignorCase:false) then
 		(
-			suffixFile += 1
+			fnGetVerNum nameCurrentFile
+			nameCurrentFile = substring nameCurrentFile 1 (numTempName - 1)
 		)
+		arrFiles = getfiles (maxFilePath + nameCurrentFile + "_Backup*.max")
+		if arrFiles.count > 0 then
+		(
+			arrFilesNum = for i in arrFiles collect \
+			(fnGetVerNum (getFilenameFile i)) as integer;sort arrFilesNum
+			suffixFile = arrFilesNum[arrFilesNum.count] + 1
+		)
+		else suffixFile = 1
 		fileSave = maxFilePath + nameCurrentFile + strNameSplit + (suffixFile as string) + ".max"
 		saveMaxFile fileSave
 	)
@@ -845,20 +856,25 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 		slidertime += 1  ----------默认改了要划一下滑条才生效,脚本直接操作了~~没找到refresh的
 	)
 	
-	on btnFnFrameTicks pressed do  -------------切换整数帧小数帧,方便拖动滑条平滑预览
+	on btnMagicBtn pressed do  -------------切换整数帧小数帧,方便拖动滑条平滑预览
 	(
 		if rolloutBulletKeyTools.gbxMinTools.visible  == true then
 		(
 			rolloutBulletKeyTools.width = 200
 			rolloutBulletKeyTools.gbxMinTools.visible  = false
-			btnFnFrameTicks.text = "✧(≖ ◡ ≖"
+			btnMagicBtn.text = "✧(≖ ◡ ≖"
 		)
 		else
 		(
 			rolloutBulletKeyTools.width = 350
 			rolloutBulletKeyTools.gbxMinTools.visible  = true
-			btnFnFrameTicks.text = "( = `▽`)"
+			btnMagicBtn.text = "( = `▽`)"
 		)
+	)
+
+	on btnMagicBtn rightclick do 
+	(
+		FileIn ((getDir #scripts) + "\\BulletScripts" + "\\cstools.ms")
 	)
 
 	on btnBoneTraj pressed do ------显示bone的轨迹
@@ -1212,7 +1228,7 @@ rollout rolloutBulletKeyTools "" width:200 height:210
 	(
 		if (selection as array).count == 0 then 
 		(
-			for tempObject in (Objects as Array) do CleanOutRangeKeys tempObject
+			for tempObject in (objects as Array) do CleanOutRangeKeys tempObject
 		)
 		else
 		(
