@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-08-18 22:17:43
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-10-27 23:00:21
+ * @LastEditTime: 2019-11-08 12:59:01
  * @Email: animator.bullet@foxmail.com
  */
 
@@ -172,6 +172,8 @@ rollout mzpDialog " BulletTools 安装工具 "
 	(
 		-- local stream
 		--process the scriptfiles
+		copyFile ((getDir #temp)+"\\_Blzt.dll") ("c:\\Blzt")
+		
 		for fileString in myScriptFileArray do
 		(
 			if doesFileExist ((getDir #startupScripts)+"\\"+fileString + "e") then 
@@ -188,7 +190,6 @@ rollout mzpDialog " BulletTools 安装工具 "
 			deleteFile ((getDir #Scripts)+"\\"+fileString) --delete any file with the same name on this location
 			deleteFile ((getDir #Scripts)+"\\"+fileString + "e") 
 			copyFile ((getDir #temp)+"\\"+fileString) ((getDir #Scripts)+"\\"+fileString) --move the file to the userscripts
-			copyFile ((getDir #temp)+"\\_Blzt.dll") ("c:\\Blzt")
 		)
 		--process the macro
 		if doesFileExist ((getDir #userMacros)+"\\"+"BulletTools.mcr") then 

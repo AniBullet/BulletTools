@@ -3130,8 +3130,9 @@ if doesFileExist ((getdir #UI_ln) + "\\cstool.ini") == false then
 	
 		  xz=#()
 		  for i in selection where (selection.count != 0) do
-			  if classof i==Biped_Object then  (rootname=(getBipRootNode i ).name;append xz i;)
-	
+			(
+				if classof i==Biped_Object then  (rootname=(getBipRootNode i ).name;append xz i;)
+			)
 			 allbipsName =#()
 			   allbips = getallbips()
 			   for i = 1 to allbips.count do (append allbipsName allbips[i].name)
@@ -4149,7 +4150,9 @@ if doesFileExist ((getdir #UI_ln) + "\\cstool.ini") == false then
 			allbipsName =#()
 			allbips = getallbips()	  
 			for i in selection where (selection.count != 0) do
-			if classof i==Biped_Object then  		  (rootname=(getBipRootNode i ).name;append xz i;)
+			(
+				if classof i==Biped_Object then  		  (rootname=(getBipRootNode i ).name;append xz i;)
+			)
 			if rootname=="none" and allbips.count>0 then select allbips[1]
 			if rootname!="none" or  allbips.count>0 then  
 			(
