@@ -379,7 +379,7 @@ if doesFileExist ((getdir #UI_ln) + "\\cstool.ini") == false then
 			(
 				temparray = #()
 				tempvar
-				for i in selection do
+				for i in (selection as array) do
 				(
 					if classOf i == Biped_Object then
 					(	
@@ -587,7 +587,7 @@ if doesFileExist ((getdir #UI_ln) + "\\cstool.ini") == false then
 		(
 		 mirror_sel()
 		 tempsel=#()
-		for o in selection do append tempsel o
+		for o in (selection as array) do append tempsel o
 		 showhand    (hbtncode-fingernum-1)
 		 gethandname (hbtncode-fingernum-1)
 		 select tempsel
@@ -3129,7 +3129,7 @@ if doesFileExist ((getdir #UI_ln) + "\\cstool.ini") == false then
 	
 	
 		  xz=#()
-		  for i in selection where (selection.count != 0) do
+		  for i in (selection as array) where (selection.count != 0) do
 			(
 				if classof i==Biped_Object then  (rootname=(getBipRootNode i ).name;append xz i;)
 			)
@@ -3399,7 +3399,7 @@ if doesFileExist ((getdir #UI_ln) + "\\cstool.ini") == false then
 	
 	
 		--   xz=#()
-		--   for i in selection do
+		--   for i in (selection as array) do
 		--       if classof i==Biped_Object then  (rootname=(getBipRootNode i ).name;append xz i;)
 	
 	
@@ -4149,7 +4149,7 @@ if doesFileExist ((getdir #UI_ln) + "\\cstool.ini") == false then
 			xz=#()
 			allbipsName =#()
 			allbips = getallbips()	  
-			for i in selection where (selection.count != 0) do
+			for i in (selection as array) where (selection.count != 0) do
 			(
 				if classof i==Biped_Object then  		  (rootname=(getBipRootNode i ).name;append xz i;)
 			)
@@ -4273,7 +4273,7 @@ if doesFileExist ((getdir #UI_ln) + "\\cstool.ini") == false then
 		 changebip=true;
 		 selbipflag=false;
 		 
-		for i in selection do
+		for i in (selection as array) do
 		if classof i==Biped_Object then 
 		 ( selbipflag=true;
 		  biprootname=i.controller.rootname
@@ -4310,7 +4310,7 @@ if doesFileExist ((getdir #UI_ln) + "\\cstool.ini") == false then
 			tsz=sz 
 			sz=#(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
 			--bip=bipname[24].controller
-			for i in selection do
+			for i in (selection as array) do
 			(
 				for j=1 to bipname.count do
 						if i==bipname[j] then sz[j]=1;

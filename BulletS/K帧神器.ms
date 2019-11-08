@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-09-28 11:48:53
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-11-07 21:56:00
+ * @LastEditTime: 2019-11-08 18:40:35
  * @Email: animator.bullet@foxmail.com
  */
 -- getKeyTime $.rotation.controller 1
@@ -751,13 +751,18 @@ rollout rolloutBulletKeyTools "" width:200 height:235
 		local fileSave = ""
 		local arrFiles = #()
 		local arrFilesNum = #()
-		local numTempName
-		local numTempVer = ""
 		
-		if (matchPattern nameCurrentFile pattern:"*_Backup*" ignorCase:false) then
+		fn fnGetVerNum nameCurrentFile = 
 		(
 			numTempName = findstring nameCurrentFile "_Backup"
 			numTempVer = substring nameCurrentFile (numTempName + 7) nameCurrentFile.count
+			return numTempVer
+		)
+
+		if (matchPattern nameCurrentFile pattern:"*_Backup*" ignorCase:false) then
+		(
+			fnGetVerNum nameCurrentFile
+			numTempName = findstring nameCurrentFile "_Backup"
 			nameCurrentFile = substring nameCurrentFile 1 (numTempName - 1)
 		)
 		arrFiles = getfiles (maxFilePath + nameCurrentFile + "_Backup*.max")
