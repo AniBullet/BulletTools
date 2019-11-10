@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-09-28 11:48:53
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-11-08 18:40:35
+ * @LastEditTime: 2019-11-10 12:56:54
  * @Email: animator.bullet@foxmail.com
  */
 -- getKeyTime $.rotation.controller 1
@@ -207,7 +207,7 @@ rcmenu menuSetSpeed
 rollout rolloutBulletKeyTools "" width:200 height:235
 (
 	---------------------------------UI--------------------------------------
-	groupbox gbxMainUI "[ K 帧神器_v0.7 ] ------ 中键关闭" pos:[5,5] width:190 height:175
+	groupbox gbxMainUI "[ K 帧工具_v0.7 ] ------ 中键关闭" pos:[5,5] width:190 height:175
 	
 		label lblRangeTimeText "| 起始帧 |      | 结尾帧 |" pos:[10,25] width:180 \
 		spinner spiStartTime "" pos:[10,43] width:50 type:#integer \
@@ -897,7 +897,7 @@ rollout rolloutBulletKeyTools "" width:200 height:235
 
 	on btnCSTools pressed do 
 	(
-		FileIn ((getDir #scripts) + "\\BulletScripts" + "\\cstools.ms")
+		FileIn ((getDir #scripts) + "\\BulletScripts\\Quote" + "\\cstools.ms")
 	)
 
 	on btnBoneTraj pressed do ------显示bone的轨迹
