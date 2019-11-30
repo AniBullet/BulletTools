@@ -749,7 +749,12 @@ rollout rolloutLit "快捷操作"
 
 	on lnkTips rightClick do popupMenu menuBStoolsSetting  --弹出设置菜单
 	
-	on btnReset pressed do (resetMaxFile #noPrompt;max tool maximize)  --静默重置场景
+	on btnReset pressed do 
+	(
+		CheckForSave ()
+		resetMaxFile #noPrompt
+		max tool maximize
+	)  --静默重置场景
 
 	on btnReset rightClick do (messagebox "---------------------------------------\r\n静默重置场景并最大化view, \r\n方便快速打开其他文件, \r\n不带之前材质球等多余配置, \r\n且没有重置提示~强烈推荐!")
 
