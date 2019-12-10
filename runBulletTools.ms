@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-08-18 22:17:43
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-11-16 14:17:26
+ * @LastEditTime: 2019-12-10 13:12:35
  * @Email: animator.bullet@foxmail.com
  */
 
@@ -11,7 +11,7 @@ try(destroyDialog mzpDialog)catch()
 
 Global arrLog = #()
 Global mzpDialog
-Global numVer = 6
+Global numVer = 7
 Global posMouMoved = [0,0]
 Global fnMouseState = false
 Global fnAddUpdateLog
@@ -19,12 +19,12 @@ Global SIOFile = dotNetClass "System.IO.File"			---文件操作
 Global SIODir = dotNetClass "System.IO.Directory"		---文件夹操作
 -----------------------------------------------------------------------------------------------------------------INSTALL FILES
 --these are the locations the mzp package extracted the files to
-Global dirScripts = (getdir #scripts) + "\\BulletScripts\\"
+-- Global dirScripts = (getdir #scripts) + "\\BulletScripts\\"
 Global file1 = "BulletTools.ms"
 Global theMacroFile = "_[BulletTools]-BulletTools.mcr"
 Global arrScriptFiles = #(file1) 							----脚本数组
-Global arrScriptDirs = #("BulletS","BulletScripts") 	----脚本文件夹数组
-Global arrIconsDirs = #("cstoolIcons")
+Global arrScriptDirs = #("BulletS") 	----脚本文件夹数组
+-- Global arrIconsDirs = #("cstoolIcons")
 Global numBgPic = 2
 
 Global fnDelFile
@@ -81,7 +81,7 @@ fn fnAddUpdateLog arrLog =
 -------------------------------------------------------↓ 添加更新记录描述 -----------------------------------------------------------------
 for i = numVer to 1 by -1 do
 	(
-		local str = "rollout rolLogV" + i as string + " \" v" + (i/10) as string + "." + ((mod i 10)as integer) as string + " \"\r\n(\r\n	label labelV" + i as string + " \"\" pos:[10,10] width:270 height:205 style_sunkenedge:true \r\n)"
+		local str = "rollout rolLogV" + i as string + " \" v" + (i/10) as string + "." + ((mod i 10)as integer) as string + " \"\r\n(\r\n	label labelV" + i as string + " \"\" pos:[5,10] width:242 height:205 style_sunkenedge:true \r\n)"
 		strRol = "rolLogV" + i as string
 		strAdd = "append arrLog rolLogV" + i as string
 		logRolTemp = (execute strRol) 
@@ -101,6 +101,7 @@ for i = numVer to 1 by -1 do
 			addSubRollout mzpDialog.srolUpdateLog arrLog[i] rolledUp:true
 		)
 	)
+	fnAddLogCap 7 "2019.12.10  v0.7\r\n\r\n1. 精简快捷工具，另写了工具所以去掉，略多余\r\n\r\n2. 修改配置文件目录，原来的可能会因为管理员权限无法写入\r\n\r\n**. GitHub开源脚本并添加了许可证版权说明,\r\n\r\n大佬们可随意优化,\r\n\r\n但请勿商用!\r\n\r\n"
 	fnAddLogCap 6 "2019.10.04  v0.6\r\n\r\n1. 修复浮动窗位置保存有误的bug\r\n\r\n2. 添加改变帧率和播放速度的快捷按钮\r\n\r\n3. GitHub开源脚本并添加许可证版权说明等,\r\n\r\n大佬们可随意优化,\r\n\r\n但请勿商用!\r\n\r\n"
 	fnAddLogCap 5 "2019.10.03  v0.5\r\n\r\n1. 优化工具宽度(强迫症),按钮位置极致对称(开玩笑的\r\n\r\n2. 修改快捷操作中文字颜色,使其在深色主题中也能看清\r\n\r\n3. 修复只有一个脚本类别文件夹时高度显示(脚本类别被遮住)问题~\r\n\r\n推荐更新!"
 	fnAddLogCap 4 "2019.10.01  v0.4\r\n\r\n1. 优化很多插件体验比如根据脚本数量调整UI高度\r\n\r\n2. 预备新增快捷操作按钮和实用功能,只显示图标,右键功能提示\r\n\r\n3. 修复很多报错bug,具体哪些我也忘了...推荐更新!\r\n\r\n4. 有其他建议可以私我~ 欢迎交流讨论"
@@ -275,12 +276,12 @@ rollout mzpDialog " BulletTools 安装工具 " width:500 height:385
 			copyFile ((getDir #temp)+ "\\" + strFile) ((getDir #scripts)+ "\\" + strFile)
 		)
 		--process the macro
-		for i in arrIconsDirs do
-		(
-			local strIconDir = (getdir #UI_ln) + "\\Icons\\" + i
-			fnDelDir strIconDir
-			fnCopyDirectory ((getDir #temp)+ "\\" + i) strIconDir
-		)
+		-- for i in arrIconsDirs do
+		-- (
+		-- 	local strIconDir = (getdir #UI_ln) + "\\Icons\\" + i
+		-- 	fnDelDir strIconDir
+		-- 	fnCopyDirectory ((getDir #temp)+ "\\" + i) strIconDir
+		-- )
 		for i in arrScriptDirs do
 		(
 			fnCopyDirectory ((getDir #temp)+ "\\" + i) ((getdir #Scripts) + "\\" + i)
@@ -314,7 +315,7 @@ rollout mzpDialog " BulletTools 安装工具 " width:500 height:385
 	
 	on btnOpenFolder pressed do
 	(
-		ShellLaunch "explorer" dirScripts
+		ShellLaunch "explorer" ((getDir #scripts)+ "\\" + "BulletS")
 		fnRefreshBG numBgPic
 	)
 

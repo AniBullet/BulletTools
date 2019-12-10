@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-08-03 17:36:21
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-11-03 01:48:48
+ * @LastEditTime: 2019-12-10 12:54:16
  * @Email: animator.bullet@foxmail.com
  */
 
@@ -13,11 +13,11 @@ try (destroyDialog BStools) catch()
 Global mouPosX = mouse.screenpos.x  
 Global mouPosY = mouse.screenpos.y  --获取鼠标位置
 
-Global ver = " v0.6 -- Bullet.S"
+Global ver = " v0.7 -- Bullet.S"
 
-Global pathScripts = ((getDir #scripts) + "\\BulletS")
-Global BulletConfig = ((getDir #scripts) + "\\BulletConfig.ini")  --配置文件路径
-Global pathLitScripts = ((getDir #scripts) + "\\BulletScripts")
+Global pathScripts = execute ("@\"" + (getDir #scripts) + "\\BulletS\"")
+Global BulletConfig = execute ("@\"" + (getDir #maxData) + "\\BulletConfig.ini\"")  --配置文件路径
+-- Global pathLitScripts = execute ("@\"" + (getDir #scripts) + "\\BulletScripts\"")
 Global arrClass = #()
 Global nameArrClass = #()
 Global arrScripts = #()
@@ -41,8 +41,8 @@ Global BsTools
 Global fnResize
 
 ------------------------方法引用-------------------------------
-FileIn (pathLitScripts + "\\fnSetPlaybackSpeed.ms")
-FileIn (pathLitScripts + "\\fnSetFps.ms")
+-- FileIn (pathLitScripts + "\\fnSetPlaybackSpeed.ms")
+-- FileIn (pathLitScripts + "\\fnSetFps.ms")
 
 
 ---------------------------------------------------------------
@@ -209,10 +209,10 @@ fn fnUninst = --卸载方法(待补充)
 		(
 			deleteFile pathScripts
 		)
-		if (doesfileexist pathLitScripts == true) then
-		(
-			deleteFile pathLitScripts
-		)
+		-- if (doesfileexist pathLitScripts == true) then
+		-- (
+		-- 	deleteFile pathLitScripts
+		-- )
 		if (doesfileexist BulletConfig == true) then
 		(
 			deleteFile BulletConfig
@@ -292,8 +292,8 @@ fn fnRefreshClass rolloutClasses =  --刷新脚本类别按钮
 		BStools.BStoolsMain.pos = [12,95]  --根据groSettings位置得出
 		BStools.BStoolsScripts.pos = BStools.BStoolsMain.pos + [0,(BStools.BStoolsMain.height + 10)]
 		BStools.BStoolsTool.pos = BStools.BStoolsScripts.pos + [0,(BStools.BStoolsScripts.height +10)]
-		BStools.BStoolsLit.pos = BStools.BStoolsTool.pos + [0,(BStools.BStoolsTool.height + 10)]
-		if iniStyle == 0 then BStools.height = 134 + BStools.BStoolsMain.height + BStools.BStoolsScripts.height + BStools.BStoolsTool.height + BStools.BStoolsLit.height
+		-- BStools.BStoolsLit.pos = BStools.BStoolsTool.pos + [0,(BStools.BStoolsTool.height + 10)]
+		if iniStyle == 0 then BStools.height = 134 + BStools.BStoolsMain.height + BStools.BStoolsScripts.height + BStools.BStoolsTool.height
 	)
 )
 fn fnRefreshScripts pressedClass =  --刷新脚本列表按钮
@@ -335,8 +335,8 @@ fn fnRefreshScripts pressedClass =  --刷新脚本列表按钮
 				BStools.BStoolsScripts.width = 129
 				BStools.BStoolsScripts.pos = BStools.BStoolsMain.pos + [0,(BStools.BStoolsMain.height + 10)]
 				BStools.BStoolsTool.pos = BStools.BStoolsScripts.pos + [0,(BStools.BStoolsScripts.height +10)]
-				BStools.BStoolsLit.pos = BStools.BStoolsTool.pos + [0,(BStools.BStoolsTool.height + 10)]
-				if iniStyle == 0 then BStools.height = 134 + BStools.BStoolsMain.height + BStools.BStoolsScripts.height + BStools.BStoolsTool.height + BStools.BStoolsLit.height
+				-- BStools.BStoolsLit.pos = BStools.BStoolsTool.pos + [0,(BStools.BStoolsTool.height + 10)]
+				if iniStyle == 0 then BStools.height = 134 + BStools.BStoolsMain.height + BStools.BStoolsScripts.height + BStools.BStoolsTool.height
 			)
 			(arrScripts[1] == undefined):
 			(
@@ -348,8 +348,8 @@ fn fnRefreshScripts pressedClass =  --刷新脚本列表按钮
 				BStools.BStoolsScripts.height = (2 * heightBtn + 10)
 				BStools.BStoolsScripts.pos = BStools.BStoolsMain.pos + [0,(BStools.BStoolsMain.height + 10)]
 				BStools.BStoolsTool.pos = BStools.BStoolsScripts.pos + [0,(BStools.BStoolsScripts.height +10)]
-				BStools.BStoolsLit.pos = BStools.BStoolsTool.pos + [0,(BStools.BStoolsTool.height + 10)]
-				if iniStyle == 0 then BStools.height = 134 + BStools.BStoolsMain.height + BStools.BStoolsScripts.height + BStools.BStoolsTool.height + BStools.BStoolsLit.height
+				-- BStools.BStoolsLit.pos = BStools.BStoolsTool.pos + [0,(BStools.BStoolsTool.height + 10)]
+				if iniStyle == 0 then BStools.height = 134 + BStools.BStoolsMain.height + BStools.BStoolsScripts.height + BStools.BStoolsTool.height
 			)
 		)
 	)
@@ -387,30 +387,30 @@ fn fnRefreshTools =  --刷新小工具
 		)
 		BStools.BStoolsTool.width = 129
 		BStools.BStoolsTool.pos = BStools.BStoolsScripts.pos + [0,(BStools.BStoolsScripts.height +10)]
-		BStools.BStoolsLit.pos = BStools.BStoolsTool.pos + [0,(BStools.BStoolsTool.height + 10)]
-		if iniStyle == 0 then BStools.height = 134 + BStools.BStoolsMain.height + BStools.BStoolsScripts.height + BStools.BStoolsTool.height + BStools.BStoolsLit.height
+		-- BStools.BStoolsLit.pos = BStools.BStoolsTool.pos + [0,(BStools.BStoolsTool.height + 10)]
+		if iniStyle == 0 then BStools.height = 134 + BStools.BStoolsMain.height + BStools.BStoolsScripts.height + BStools.BStoolsTool.height
 	)
 )
 
-fn fnRefreshRolLit =
-(
-	if BStools.BStoolsLit.rollouts.count != 0 then
-	(
-		removeSubRollout BStools.BStoolsLit rolloutLit
-	)
-	addSubRollout BStools.BStoolsLit rolloutLit 
-	BStools.BStoolsLit.width = 129
-	BStools.BStoolsLit.height = 155
-	BStools.BStoolsLit.pos = BStools.BStoolsTool.pos + [0,(BStools.BStoolsTool.height + 10)]
-	if iniStyle == 0 then BStools.height = 134 + BStools.BStoolsMain.height + BStools.BStoolsScripts.height + BStools.BStoolsTool.height + BStools.BStoolsLit.height
-)
+-- fn fnRefreshRolLit =
+-- (
+-- 	if BStools.BStoolsLit.rollouts.count != 0 then
+-- 	(
+-- 		removeSubRollout BStools.BStoolsLit rolloutLit
+-- 	)
+-- 	addSubRollout BStools.BStoolsLit rolloutLit 
+-- 	BStools.BStoolsLit.width = 129
+-- 	BStools.BStoolsLit.height = 155
+-- 	BStools.BStoolsLit.pos = BStools.BStoolsTool.pos + [0,(BStools.BStoolsTool.height + 10)]
+-- 	if iniStyle == 0 then BStools.height = 134 + BStools.BStoolsMain.height + BStools.BStoolsScripts.height + BStools.BStoolsTool.height + BStools.BStoolsLit.height
+-- )
 
 fn fnRefreshList =  ------------更新脚本列表
 (
 	fnRefreshClass rolloutClasses
 	fnRefreshScripts nameArrClass[iniClassIn]
 	fnRefreshTools ()
-	fnRefreshRolLit ()
+	-- fnRefreshRolLit ()
 )
 
 rcmenu menuBStoolsSetting --设置菜单
@@ -507,7 +507,7 @@ rollout BStools ("BsTools" + ver) width:rolWidth height:iniSize[2]
 	subrollout BStoolsMain ""
 	subrollout BStoolsScripts ""
 	subrollout BStoolsTool ""
-	subrollout BStoolsLit ""
+	-- subrollout BStoolsLit ""
 	
 	fn fnRefreshIcons = --更新按钮图标,调用系统ui位图...
 	(
@@ -588,7 +588,7 @@ rollout BStools ("BsTools" + ver) width:rolWidth height:iniSize[2]
 -- 		posBtn = [3,5]
 		fnUiStyle 0;iniStyle = 0
 		BStools.width = rolWidth
-		BStools.height = 134 + BStools.BStoolsMain.height + BStools.BStoolsScripts.height + BStools.BStoolsTool.height + BStools.BStoolsLit.height
+		BStools.height = 134 + BStools.BStoolsMain.height + BStools.BStoolsScripts.height + BStools.BStoolsTool.height
 		fnRefreshList ()
 	)  --浮动
 
@@ -624,198 +624,198 @@ rollout rolloutTools "小工具"
 	)
 )
 
-rcmenu menuSetSpeed
-(
-	menuItem menuCurrentSpeed "" enabled:false
-	menuItem menuSet14Speed "-- 1/4x --"
-	menuItem menuSet12Speed "-- 1/2x --"
-	separator menuSepSpeedLow
-	menuItem menuSet1Speed "--  1x  --"
-	separator menuSepSpeedHigh
-	menuItem menuSet2Speed "--  2x  --"
-	menuItem menuSet4Speed "--  4x  --"
+-- rcmenu menuSetSpeed
+-- (
+-- 	menuItem menuCurrentSpeed "" enabled:false
+-- 	menuItem menuSet14Speed "-- 1/4x --"
+-- 	menuItem menuSet12Speed "-- 1/2x --"
+-- 	separator menuSepSpeedLow
+-- 	menuItem menuSet1Speed "--  1x  --"
+-- 	separator menuSepSpeedHigh
+-- 	menuItem menuSet2Speed "--  2x  --"
+-- 	menuItem menuSet4Speed "--  4x  --"
 
-	on menuSetSpeed open do 
-	(
-		judgePlaySpeedValue ()
-		menuSetSpeed.menuCurrentSpeed.text = "当前: " + valuePlaySpeed
-	)
+-- 	on menuSetSpeed open do 
+-- 	(
+-- 		judgePlaySpeedValue ()
+-- 		menuSetSpeed.menuCurrentSpeed.text = "当前: " + valuePlaySpeed
+-- 	)
 
-	on menuSet14Speed picked do 
-	(
-		fnSetSpeed 1
-	)
-	on menuSet12Speed picked do
-	(
-		fnSetSpeed 2
-	)
-	on menuSet1Speed picked do 
-	(
-		fnSetSpeed 3
-	)
-	on menuSet2Speed picked do 
-	(
-		fnSetSpeed 4
-	)
-	on menuSet4Speed picked do 
-	(
-		fnSetSpeed 5
-	)
-)
+-- 	on menuSet14Speed picked do 
+-- 	(
+-- 		fnSetSpeed 1
+-- 	)
+-- 	on menuSet12Speed picked do
+-- 	(
+-- 		fnSetSpeed 2
+-- 	)
+-- 	on menuSet1Speed picked do 
+-- 	(
+-- 		fnSetSpeed 3
+-- 	)
+-- 	on menuSet2Speed picked do 
+-- 	(
+-- 		fnSetSpeed 4
+-- 	)
+-- 	on menuSet4Speed picked do 
+-- 	(
+-- 		fnSetSpeed 5
+-- 	)
+-- )
 
-rcmenu menuSetFps
-(
-	menuItem menuCurrentFps "" enabled:false
-	menuItem menuSet60Fps "-- 60 Fps --"
-	menuItem menuSet30Fps "-- 30 Fps --"
-	menuItem menuSet24Fps "-- 24 Fps --"
-	separator menuSepCustom
-	menuItem menuCustomFps "自定义帧率"
+-- rcmenu menuSetFps
+-- (
+-- 	menuItem menuCurrentFps "" enabled:false
+-- 	menuItem menuSet60Fps "-- 60 Fps --"
+-- 	menuItem menuSet30Fps "-- 30 Fps --"
+-- 	menuItem menuSet24Fps "-- 24 Fps --"
+-- 	separator menuSepCustom
+-- 	menuItem menuCustomFps "自定义帧率"
 
-	on menuSetFps open do 
-	(
-		menuSetFps.menuCurrentFps.text = "当前帧率: " + framerate as string + " FPS"
-	)
+-- 	on menuSetFps open do 
+-- 	(
+-- 		menuSetFps.menuCurrentFps.text = "当前帧率: " + framerate as string + " FPS"
+-- 	)
 
-	on menuSet60Fps picked do 
-	(
-		fnSetFps 60
-	)
-	on menuSet30Fps picked do
-	(
-		fnSetFps 30
-	)
-	on menuSet24Fps picked do 
-	(
-		fnSetFps 24
-	)
+-- 	on menuSet60Fps picked do 
+-- 	(
+-- 		fnSetFps 60
+-- 	)
+-- 	on menuSet30Fps picked do
+-- 	(
+-- 		fnSetFps 30
+-- 	)
+-- 	on menuSet24Fps picked do 
+-- 	(
+-- 		fnSetFps 24
+-- 	)
 
-	on menuCustomFps picked do
-	(
-		try (destroyDialog rolCustomFps) catch()
-		createdialog rolCustomFps 120 55 fgcolor:(color 255 20 147)
-	)
-)
+-- 	on menuCustomFps picked do
+-- 	(
+-- 		try (destroyDialog rolCustomFps) catch()
+-- 		createdialog rolCustomFps 120 55 fgcolor:(color 255 20 147)
+-- 	)
+-- )
 
-rollout rolloutLit "快捷操作"
-(
-	local btnTipsSize = 26
-	local btnPos
-	local strCurrentFps = "当前帧率: " + framerate as string + " FPS"
+-- rollout rolloutLit "快捷操作"
+-- (
+-- 	local btnTipsSize = 26
+-- 	local btnPos
+-- 	local strCurrentFps = "当前帧率: " + framerate as string + " FPS"
 
-	fn fnRolLitBtnPos numL numB =
-	(
-		btnPos = [(6 + (26 * (numL - 1))),(20 + (26 * (numB - 1)))]
-	)
+-- 	fn fnRolLitBtnPos numL numB =
+-- 	(
+-- 		btnPos = [(6 + (26 * (numL - 1))),(20 + (26 * (numB - 1)))]
+-- 	)
 
-	HyperLink lnkTips "( 右键图标功能提示 )" pos:[3,3] width:BStools.width color:(color 255 20 147) hovercolor:(color 255 0 255) visitedcolor:(color 255 20 147) address:"https://space.bilibili.com/2031113"
+-- 	HyperLink lnkTips "( 右键图标功能提示 )" pos:[3,3] width:BStools.width color:(color 255 20 147) hovercolor:(color 255 0 255) visitedcolor:(color 255 20 147) address:"https://space.bilibili.com/2031113"
 	
-	button btnReset " " pos:(fnRolLitBtnPos 1 1) width:btnTipsSize height:btnTipsSize \
-	toolTip:"静默重置场景"
-	button btnTipsIsolate "" pos:(fnRolLitBtnPos 2 1)  width:btnTipsSize height:btnTipsSize \
-	toolTip:"蒙皮时左键编辑模型,\r\n右键隐藏选择面,\r\n已隐藏则显示全部元素"
-	button btnSetFps " " pos:(fnRolLitBtnPos 3 1) width:btnTipsSize height:btnTipsSize \
-	toolTip:"设置帧率"
-	button btnSetPlaySpeed " " pos:(fnRolLitBtnPos 4 1) width:btnTipsSize height:btnTipsSize \
-	toolTip:"设置播放速度"
-	button btnTips4 " " pos:(fnRolLitBtnPos 1 2) width:btnTipsSize height:btnTipsSize toolTip:" "
-	button btnTips5 " " pos:(fnRolLitBtnPos 2 2) width:btnTipsSize height:btnTipsSize toolTip:" "
-	button btnTips6 " " pos:(fnRolLitBtnPos 3 2) width:btnTipsSize height:btnTipsSize toolTip:" "
-	button btnTips7 " " pos:(fnRolLitBtnPos 4 2) width:btnTipsSize height:btnTipsSize toolTip:" "
-	button btnTips8 " " pos:(fnRolLitBtnPos 1 3) width:btnTipsSize height:btnTipsSize toolTip:" "
-	button btnTips9 " " pos:(fnRolLitBtnPos 2 3) width:btnTipsSize height:btnTipsSize toolTip:" "
-	button btnTips10 " " pos:(fnRolLitBtnPos 3 3) width:btnTipsSize height:btnTipsSize toolTip:" "
-	button btnTips11 " " pos:(fnRolLitBtnPos 4 3) width:btnTipsSize height:btnTipsSize toolTip:" "
-	button btnTips12 " " pos:(fnRolLitBtnPos 1 4) width:btnTipsSize height:btnTipsSize toolTip:" "
-	button btnTips13 " " pos:(fnRolLitBtnPos 2 4) width:btnTipsSize height:btnTipsSize toolTip:" "
-	button btnTips14 " " pos:(fnRolLitBtnPos 3 4) width:btnTipsSize height:btnTipsSize toolTip:" "
-	button btnTips15 " " pos:(fnRolLitBtnPos 4 4) width:btnTipsSize height:btnTipsSize toolTip:" "
-	button btnTips16 " " pos:(fnRolLitBtnPos 1 5) width:btnTipsSize height:btnTipsSize toolTip:" "
-	button btnTips17 " " pos:(fnRolLitBtnPos 2 5) width:btnTipsSize height:btnTipsSize toolTip:" "
-	button btnTips18 " " pos:(fnRolLitBtnPos 3 5) width:btnTipsSize height:btnTipsSize toolTip:" "
-	button btnTips19 " " pos:(fnRolLitBtnPos 4 5) width:btnTipsSize height:btnTipsSize toolTip:" "
-	button btnTips20 " " pos:(fnRolLitBtnPos 1 6) width:btnTipsSize height:btnTipsSize toolTip:" "
-	button btnTips21 " " pos:(fnRolLitBtnPos 2 6) width:btnTipsSize height:btnTipsSize toolTip:" "
-	button btnTips22 " " pos:(fnRolLitBtnPos 3 6) width:btnTipsSize height:btnTipsSize toolTip:" "
-	button btnTips23 " " pos:(fnRolLitBtnPos 4 6) width:btnTipsSize height:btnTipsSize toolTip:" "
+-- 	button btnReset " " pos:(fnRolLitBtnPos 1 1) width:btnTipsSize height:btnTipsSize \
+-- 	toolTip:"静默重置场景"
+-- 	button btnTipsIsolate "" pos:(fnRolLitBtnPos 2 1)  width:btnTipsSize height:btnTipsSize \
+-- 	toolTip:"蒙皮时左键编辑模型,\r\n右键隐藏选择面,\r\n已隐藏则显示全部元素"
+-- 	button btnSetFps " " pos:(fnRolLitBtnPos 3 1) width:btnTipsSize height:btnTipsSize \
+-- 	toolTip:"设置帧率"
+-- 	button btnSetPlaySpeed " " pos:(fnRolLitBtnPos 4 1) width:btnTipsSize height:btnTipsSize \
+-- 	toolTip:"设置播放速度"
+-- 	button btnTips4 " " pos:(fnRolLitBtnPos 1 2) width:btnTipsSize height:btnTipsSize toolTip:" "
+-- 	button btnTips5 " " pos:(fnRolLitBtnPos 2 2) width:btnTipsSize height:btnTipsSize toolTip:" "
+-- 	button btnTips6 " " pos:(fnRolLitBtnPos 3 2) width:btnTipsSize height:btnTipsSize toolTip:" "
+-- 	button btnTips7 " " pos:(fnRolLitBtnPos 4 2) width:btnTipsSize height:btnTipsSize toolTip:" "
+-- 	button btnTips8 " " pos:(fnRolLitBtnPos 1 3) width:btnTipsSize height:btnTipsSize toolTip:" "
+-- 	button btnTips9 " " pos:(fnRolLitBtnPos 2 3) width:btnTipsSize height:btnTipsSize toolTip:" "
+-- 	button btnTips10 " " pos:(fnRolLitBtnPos 3 3) width:btnTipsSize height:btnTipsSize toolTip:" "
+-- 	button btnTips11 " " pos:(fnRolLitBtnPos 4 3) width:btnTipsSize height:btnTipsSize toolTip:" "
+-- 	button btnTips12 " " pos:(fnRolLitBtnPos 1 4) width:btnTipsSize height:btnTipsSize toolTip:" "
+-- 	button btnTips13 " " pos:(fnRolLitBtnPos 2 4) width:btnTipsSize height:btnTipsSize toolTip:" "
+-- 	button btnTips14 " " pos:(fnRolLitBtnPos 3 4) width:btnTipsSize height:btnTipsSize toolTip:" "
+-- 	button btnTips15 " " pos:(fnRolLitBtnPos 4 4) width:btnTipsSize height:btnTipsSize toolTip:" "
+-- 	button btnTips16 " " pos:(fnRolLitBtnPos 1 5) width:btnTipsSize height:btnTipsSize toolTip:" "
+-- 	button btnTips17 " " pos:(fnRolLitBtnPos 2 5) width:btnTipsSize height:btnTipsSize toolTip:" "
+-- 	button btnTips18 " " pos:(fnRolLitBtnPos 3 5) width:btnTipsSize height:btnTipsSize toolTip:" "
+-- 	button btnTips19 " " pos:(fnRolLitBtnPos 4 5) width:btnTipsSize height:btnTipsSize toolTip:" "
+-- 	button btnTips20 " " pos:(fnRolLitBtnPos 1 6) width:btnTipsSize height:btnTipsSize toolTip:" "
+-- 	button btnTips21 " " pos:(fnRolLitBtnPos 2 6) width:btnTipsSize height:btnTipsSize toolTip:" "
+-- 	button btnTips22 " " pos:(fnRolLitBtnPos 3 6) width:btnTipsSize height:btnTipsSize toolTip:" "
+-- 	button btnTips23 " " pos:(fnRolLitBtnPos 4 6) width:btnTipsSize height:btnTipsSize toolTip:" "
 	
-	on rolloutLit open do ----------------给按钮附加图片
-	(
-		btnReset.images = #("UVWUnwrapModes_24i.bmp","UVWUnwrapModes_24i.bmp",28,3,3,3,3,true,false)
-		btnTipsIsolate.images = #("UVWUnwrapView_24i.bmp","UVWUnwrapView_24i.bmp",27,15,15,15,15,true,false) 
-		btnSetFps.images = #("VCRControls_24i.bmp","VCRControls_24i.bmp",28,19,19,19,19,true,true) 
-		btnSetPlaySpeed.images = #("VCRControls_24i.bmp","VCRControls_24i.bmp",28,11,11,11,11,true,true) 
-	)
+-- 	on rolloutLit open do ----------------给按钮附加图片
+-- 	(
+-- 		btnReset.images = #("UVWUnwrapModes_24i.bmp","UVWUnwrapModes_24i.bmp",28,3,3,3,3,true,false)
+-- 		btnTipsIsolate.images = #("UVWUnwrapView_24i.bmp","UVWUnwrapView_24i.bmp",27,15,15,15,15,true,false) 
+-- 		btnSetFps.images = #("VCRControls_24i.bmp","VCRControls_24i.bmp",28,19,19,19,19,true,true) 
+-- 		btnSetPlaySpeed.images = #("VCRControls_24i.bmp","VCRControls_24i.bmp",28,11,11,11,11,true,true) 
+-- 	)
 
-	on lnkTips rightClick do popupMenu menuBStoolsSetting  --弹出设置菜单
+-- 	on lnkTips rightClick do popupMenu menuBStoolsSetting  --弹出设置菜单
 	
-	on btnReset pressed do 
-	(
-		CheckForSave ()
-		resetMaxFile #noPrompt
-		max tool maximize
-	)  --静默重置场景
+-- 	on btnReset pressed do 
+-- 	(
+-- 		CheckForSave ()
+-- 		resetMaxFile #noPrompt
+-- 		max tool maximize
+-- 	)  --静默重置场景
 
-	on btnReset rightClick do (messagebox "---------------------------------------\r\n静默重置场景并最大化view, \r\n方便快速打开其他文件, \r\n不带之前材质球等多余配置, \r\n且没有重置提示~强烈推荐!")
+-- 	on btnReset rightClick do (messagebox "---------------------------------------\r\n静默重置场景并最大化view, \r\n方便快速打开其他文件, \r\n不带之前材质球等多余配置, \r\n且没有重置提示~强烈推荐!")
 
-	on btnTipsIsolate pressed do 
-	(
-		local objSelTemp
-		if (selection.count == 1) and (classof $ != undefined) then
-		(
-			objSelTemp = $
-			if (classof objSelTemp == Editable_Poly) then
-			(
-				modPanel.setCurrentObject objSelTemp
-				subobjectLevel = 5
-			)
-			else
-			(
-				messagebox "------------------------------------\r\n仅支持 Editable_Poly 模型~"
-			)
-		)
-	)
-	on btnTipsIsolate rightclick do 
-	(
-		local objSelTemp
-		if (selection.count == 1) and (classof $ != undefined) then
-		(
-			objSelTemp = $
-			if (classof objSelTemp == Editable_Poly) then
-			(
-				if ((polyop.getHiddenFaces $) as array).count == 0 then
-				(
-					subobjectLevel = 0
-				)
-				else
-				(
-					modPanel.setCurrentObject objSelTemp
-					subobjectLevel = 5
-					objSelTemp.unhideAll #Face
-					subobjectLevel = 0
-				)
-			)
-			else
-			(
-				messagebox "------------------------------------\r\n仅支持 Editable_Poly 模型~"
-			)
-		)
-	)
+-- 	on btnTipsIsolate pressed do 
+-- 	(
+-- 		local objSelTemp
+-- 		if (selection.count == 1) and (classof $ != undefined) then
+-- 		(
+-- 			objSelTemp = $
+-- 			if (classof objSelTemp == Editable_Poly) then
+-- 			(
+-- 				modPanel.setCurrentObject objSelTemp
+-- 				subobjectLevel = 5
+-- 			)
+-- 			else
+-- 			(
+-- 				messagebox "------------------------------------\r\n仅支持 Editable_Poly 模型~"
+-- 			)
+-- 		)
+-- 	)
+-- 	on btnTipsIsolate rightclick do 
+-- 	(
+-- 		local objSelTemp
+-- 		if (selection.count == 1) and (classof $ != undefined) then
+-- 		(
+-- 			objSelTemp = $
+-- 			if (classof objSelTemp == Editable_Poly) then
+-- 			(
+-- 				if ((polyop.getHiddenFaces $) as array).count == 0 then
+-- 				(
+-- 					subobjectLevel = 0
+-- 				)
+-- 				else
+-- 				(
+-- 					modPanel.setCurrentObject objSelTemp
+-- 					subobjectLevel = 5
+-- 					objSelTemp.unhideAll #Face
+-- 					subobjectLevel = 0
+-- 				)
+-- 			)
+-- 			else
+-- 			(
+-- 				messagebox "------------------------------------\r\n仅支持 Editable_Poly 模型~"
+-- 			)
+-- 		)
+-- 	)
 
-	on btnSetFps pressed do 
-	(
-		popupMenu menuSetFps
-	)
+-- 	on btnSetFps pressed do 
+-- 	(
+-- 		popupMenu menuSetFps
+-- 	)
 
-	on btnSetPlaySpeed pressed do 
-	(
-		popupMenu menuSetSpeed
-	)
-)
+-- 	on btnSetPlaySpeed pressed do 
+-- 	(
+-- 		popupMenu menuSetSpeed
+-- 	)
+-- )
 CreateDialog BStools pos:iniPos style:#(#style_titlebar)
 ------------------- 创建子卷轴栏和按钮等等UI -------------------------------------------
 fnRefreshClass rolloutClasses
 fnRefreshScripts nameArrClass[iniClassIn]
 fnRefreshTools ()
-fnRefreshRolLit ()
+-- fnRefreshRolLit ()
 clearListener()  --清空监听器
