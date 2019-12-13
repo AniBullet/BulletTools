@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-08-03 17:36:21
  * @LastEditors: Bullet.S
- * @LastEditTime: 2019-12-10 12:54:16
+ * @LastEditTime: 2019-12-12 12:52:20
  * @Email: animator.bullet@foxmail.com
  */
 
@@ -97,7 +97,7 @@ else
 		--选项按钮
 		if ( result == dialogResult.Yes ) then
 		(
-			shellLaunch "explorer.exe" pathScripts
+			shellLaunch pathScripts ""
 		)
 		else if ( result == dialogResult.No ) then
 		(
@@ -139,7 +139,7 @@ fn fnAddButton nameBtn arrDir arrName tips = --根据文件夹和里面脚本添
 						for num = 1 to arrDir.count do
 						(
 							str += "on btnClass" + (num as string) + " pressed do (\r\n iniClassIn = " + (num as string) + "\r\n" + "SetINISetting BulletConfig \"GlobalSet\"  \"ClassPressed\" \"" + (num as string) + "\"\r\n fnRefreshScripts nameArrClass[iniClassIn]\r\n)\r\n"
-							str += "on btnClass" + (num as string) + " rightclick do (\r\n shellLaunch \"explorer.exe\" (@\"" + arrDir[num] + "\")\r\n)\r\n"
+							str += "on btnClass" + (num as string) + " rightclick do (\r\n shellLaunch (@\"" + arrDir[num] + "\") \"\"\r\n)\r\n"
 						)
 						str += ")"
 					)
@@ -156,7 +156,7 @@ fn fnAddButton nameBtn arrDir arrName tips = --根据文件夹和里面脚本添
 						for num = 1 to arrDir.count do
 						(
 							str += "on btnClass" + (num as string) + " pressed do (\r\n iniClassIn = " + (num as string) + "\r\n" + "SetINISetting BulletConfig \"GlobalSet\"  \"ClassPressed\" \"" + (num as string) + "\"\r\n fnRefreshScripts nameArrClass[iniClassIn]\r\n)\r\n"
-							str += "on btnClass" + (num as string) + " rightclick do (\r\n shellLaunch \"explorer.exe\" (@\"" + arrDir[num] + "\")\r\n)\r\n"
+							str += "on btnClass" + (num as string) + " rightclick do (\r\n shellLaunch (@\"" + arrDir[num] + "\") \"\"\r\n)\r\n"
 						)
 						str += ")"
 					)
@@ -232,7 +232,7 @@ fn fnUninst = --卸载方法(待补充)
 			deleteFile ((getDir #userMacros)+"\\_[BulletTools]-BulletTools.mcr")
 		)
 		
-		if (shellLaunch "explorer.exe" (getDir #scripts)) then
+		if (shellLaunch (getDir #scripts) "") then
 		(
 			messagebox "BulletTools工具已删除卸载,\r\n\r\n重新安装需要原mzp拖入...\r\n\r\n也可能由于权限原因,\r\n\r\n需手动删除打开窗口下的\r\n\r\n\"BulletS\"和\"BulletScripts\"文件夹~\r\n\r\n"
 		)
@@ -437,7 +437,7 @@ rcmenu menuBStoolsSetting --设置菜单
 	)
 	on menuCustom picked do  --打开自定脚本目录
 	(
-		shellLaunch "explorer.exe" pathScripts
+		shellLaunch pathScripts ""
 	)
 	on menuNoAutorun picked do  --打开自定脚本目录
 	(
