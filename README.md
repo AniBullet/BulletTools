@@ -7,10 +7,18 @@
  * @Email: animator.bullet@foxmail.com
  -->
 # BulletTools
-
 >专为动画师定制,自由脚本整合工具~以及试着写一些小脚本...
+## 帮助文档
+https://acedocs.tk/
+## 下载链接
+[![BulletsTools](https://img.shields.io/badge/BulletTools-Download-blue?style=flat-square&logo=github)](https://github.com/AnimatorBullet/BulletTools/releases)
+## 更新说明
+**2019.12.10  v0.7**
+1. 精简快捷工具，另写了工具所以去掉，略多余
+2. 修改配置文件目录，原来的可能会因为管理员权限无法写入
+... GitHub开源脚本并添加了许可证版权说明
+大佬们可随意优化,但请勿商用!
 
-****
 **2019.10.04  v0.6**
 1. 修复浮动窗位置保存有误的bug
 2. 添加改变帧率和播放速度的快捷按钮
