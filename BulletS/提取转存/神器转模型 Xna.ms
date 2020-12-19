@@ -1,12 +1,10 @@
-/*
-To Do List
-1. PMX export may be broken now?
-2. Mulitple UV Channels
-3. Scale Was wrong on my system? scale may be affected by a global scale in 3dsmax?
-*/
-
-global rev = "v1.33L  (05.06.16)",groups=#(), \
+global rev = "v1.39  (08.17.19)",groups=#(), \
 changelog = #(
+	"[Aug 17 2019]	replaced normal import function, however its 1000x slower now\n",
+	"[Aug 17 2019]	fixed multi uv import and skin assignment to combined meshes\n",
+	"[Aug 13 2019]	changed the constant number of weights per bone from 4 to n (dynamic)\n",
+	"[June 11 2019]	tweaked function that skips tangent data if present\n",
+	"[May 02 2019]	ammending corrections to read past XPS header; credits to johnzero7\n",
 	"[May 06 2016]	Corrected bad bone lookup when run under 3ds max 2014\n",
 	"[May 02 2016]	Wrote Export Support for .Mesh\n",
 	"[Apr 24 2016]	Fixed Bad texture name handling on export\n",
@@ -44,6 +42,7 @@ changelog = #(
 	"[Jan 12 2013]	Added INI logging, kind of ... LOL\n",
 	"[Apr 24 2013]	fixed the check bone function\n",
 	"[Apr 24 2013]	fixed wrong vert colours, as reported by XNAaraL\n",
+	"[May 17 2017]	XNAaraL breaks compatbility with formats AGAIN, added fix\n",
 	
 	"\n\nToDo List:\n",
 	"  - Export Multiple UV Support\n",
@@ -182,9 +181,10 @@ struct xnalara_format (
 	mesh
 	)
 struct xnalara_skeleton (
-	name,
-	parent,
-	position
+	name = #(),
+	parent = #(),
+	position = #(),
+	rotation = #()
 	)
 struct render_group (
 	sum,
@@ -332,7 +332,19 @@ struct bone_data(
 /*	--=========================================================
 	3.0		Script Program Functions
 */	--=========================================================
-
+fn ReadXNAaraLString &bstream fixedLen = (
+	local length2 = 0, i = 1, letter = 0, isTerm = false, result = ""
+	if fixedLen >= 128 do (
+		length2 = readbyte bstream #unsigned
+		fixedLen = (mod fixedLen 128) + (length2 * 128);
+		)
+	for i = 1 to fixedLen do (
+		letter = readbyte bstream #unsigned
+		if letter == 0 do (isTerm = true)
+		if isTerm == false do (result += bit.IntAsChar letter)
+		)
+	result
+	)
 fn ReadFixedString bstream fixedLen = (
 	local str = ""
 	for i = 1 to fixedLen do (
@@ -528,11 +540,10 @@ fn paddstring len instring = (
 	str
 	)
 
-fn ifUniqueAppend theArray theValue = (
+fn ifUniqueAppend &theArray theValue = (
 	if (findItem theArray theValue)==0 do (
 		append theArray theValue
 		)
-	theArray
 	)
 fn uppercase instring = (
 	local upper, lower, outstring
@@ -882,20 +893,111 @@ fn validatebones fstream file_size = (
 	if bone_search == true then (return -1)else(return (pos-1))
 	)
 fn validateWeight fstream count = (
-	pos = ftell fstream;valid = true;cnt = 0.0
+	local pos = ftell fstream
+	local valid = true, w = 1
+	local cnt = 0.0, b = 1
+	-- cycle through bone indicies, check they do not exceed the bone count
 	for w = 1 to 4 do (
-		if (readshort fstream #unsigned)>=count do (
-			valid=false
+		if (readshort fstream #unsigned) >= count do (
+			valid = false
 			)
 		)
-	for w = 1 to 4 do (
-		cnt+=readfloat fstream
+	-- cycle through bone weights, check they do not exceed 1.0
+	if valid do (
+		for w = 1 to 4 do (
+			cnt += readfloat fstream
+			)
+		--format "weight total: %\n" (abs (cnt - 1.0))
+		--format "weight total remainder: %\n" (mod cnt 1.0)
+		if cnt < 0.0 or (abs (cnt - 1.0)) > 0.001 do valid = false
+		--if (close_enough2 cnt 1.0 10) == false do (
+		--	valid=false
+		--	)
+		--format "are weights okay?: %\n" valid
 		)
-	if (close_enough2 cnt 1.0 10)==false do (
-		valid=false
-		)
+	
+	-- seek back to where we started
 	fseek fstream pos #seek_set
 	return valid
+	)
+fn roundToMultiple numToRound multiple = (
+	local remainder = mod numToRound multiple
+	if remainder == 0 do (
+		return numToRound
+		)
+	return (numToRound + multiple - remainder)
+	)
+fn skipTheCrap &f settingsLen = (
+	local i = 1, ii = 1, b = -1
+	local optInfo = 0
+	local optcount = 0
+	local optType = 0
+	local items = 0
+	local waste = 0
+	local valuesRead = 0
+	local hash = 0
+	local poseBytes = ""
+	local poseLenght = 0
+	local emptyBytes = 0
+	local readCount = 0
+	local loopStart = 0
+	local loopFinish = 0
+	hash = readlong f #unsigned
+	valuesRead += 1 * 4
+	items = readlong f #unsigned
+	valuesRead += 1 * 4
+	for i = 1 to items do (
+		optType = readlong f #unsigned
+		valuesRead += 1 * 4
+		optcount = readlong f #unsigned
+		valuesRead += 1 * 4
+		optInfo = readlong f #unsigned
+		valuesRead += 1 * 4
+		
+		if optType == 0xFF then (
+			if optcount > 0 do (
+				for ii = 1 to optcount do (
+					waste = readlong f #unsigned
+					)
+				)
+			valuesRead += optcount * 2
+			)
+		else if optType == 2 then (
+			if optcount > 0 do (
+				for ii = 1 to (optcount * 2) do (
+					waste = readlong f #unsigned
+					)
+				)
+			valuesRead += optcount * 2 * 4
+			)
+		else if optType == 1 then (
+			if optcount > 0 do (
+				for ii = 1 to optInfo do (
+					b = -1
+					while b != 0x0A do (
+						b = readbyte f #unsigned
+						if b != 0x0A do (
+							poseBytes += bit.IntAsChar b
+							)
+						)
+					)
+				)
+			poseLenght = roundToMultiple optcount 4
+			emptyBytes = poseLenght - optcount
+			fseek f emptyBytes #seek_cur
+			--poseString = bin_ops.decodeBytes(poseBytes)
+			--bonesPose = read_ascii_xps.poseData(poseString)
+			readCount = roundToMultiple optcount 4
+			valuesRead += readCount
+			)
+		else (
+			loopStart = (floor (valuesRead / 4.0)) as integer
+			loopFinish = settingsLen
+			for ii = loopStart to loopFinish - 1 do (
+				waste = readlong f #unsigned
+				)
+			)
+		)
 	)
 fn printblockpos bname badr = (
 	str=((bit.intAsHex badr)as string)
@@ -3061,7 +3163,7 @@ rollout progressTest "Progress Test" (
 		doit_prog.value = doit_prog_progress
 		)
 	)
-rollout appGUI "XNALara Converter" width:175 height:354 (
+rollout appGUI "XNALara Converter" width:175 height:410 (
 	button btn1 "IMPORT" pos:[16,8] width:120 height:32
 	groupBox grp1 "Import Options" pos:[8,111] width:160 height:106
 	editText edt1 "Scale:" pos:[10,88] width:86 height:16 bold:true text:(rescale as string)
@@ -3069,22 +3171,26 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 	checkbox chk2 "Hide Unused Bones" pos:[24,149] width:140 height:17 checked:mshHde
 	checkbox chk3 "Vertex Normals (Slow)" pos:[24,169] width:128 height:17 enabled:true checked:false
 	checkbox chk8 "Preserve Render Groups" pos:[24,189] width:138 height:17 enabled:true checked:true
-	groupBox grp2 "Export Options" pos:[8,221] width:160 height:106
-	checkbox chk4 "Selection Only" pos:[24,239] width:128 height:17
-	checkbox chk5 "Reparent Bones" pos:[24,259] width:128 height:17
-	checkbox chk6 "Copy Textures" pos:[24,279] width:128 height:17 enabled:true checked:false
-	checkbox chk7 "Open Editor On Export" pos:[24,299] width:128 height:17 enabled:true checked:reviewMats
-	button btn3 "About" pos:[123,330] width:42 height:18
-	label lbl2 "" pos:[11,332] width:98 height:17
+	groupBox grp2 "Export Options" pos:[8,221] width:160 height:164
+	checkbox chk9 "Optimize Vertices" pos:[24,239] width:128 height:17 checked:false
+	checkbox chk4 "Selection Only" pos:[24,259] width:128 height:17
+	checkbox chk5 "Reparent Bones" pos:[24,279] width:128 height:17
+	checkbox chk6 "Copy Textures" pos:[24,299] width:128 height:17 enabled:true checked:false
+	checkbox chk7 "Open Editor On Export" pos:[24,319] width:128 height:17 enabled:true checked:reviewMats
+	dropdownlist ddl_exportto "XnaLara Version:" pos:[24,339] width:128 height:17 items:#("Original", "XNAaraL", "Daemon") enable:false
+	button btn3 "About" pos:[123,388] width:42 height:18
+	label lbl2 "" pos:[11,390] width:98 height:17
 	button btn1b "+" pos:[140,12] width:24 height:24
 	button btn2 "EXPORT" pos:[16,48] width:120 height:32
 	button btn2b "+" pos:[140,52] width:24 height:24
 	button btn7 "Test" pos:[96,88] width:32 height:16
 	button btn8 "Options" pos:[128,88] width:43 height:16
-	local runtime=[0,0,0],return_state=false
+	local runtime=[0,0,0],return_state=false,logErrorWeights=""
 	on appGUI open do (
 		lbl2.caption=rev
 		buildRenderGroups()
+		ddl_exportto.selection = 1
+		chk3.checked = normON
 		)
 	on chk1 changed theState do (
 		mshSingle = theState;writeINI iniFile "Import" "single_mesh" theState
@@ -3092,6 +3198,7 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 	on chk2 changed theState do (
 		mshHde = theState;writeINI iniFile "Import" "unused_hide" theState
 		)
+	on chk3 changed theState do (normON = theState)
 	on edt1 entered txt do (
 		if (txt as float)!=undefined do (
 			if (txt as float)!=0 then (
@@ -3126,6 +3233,7 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 		createDialog expPath
 		)
 	on btn1 pressed do ( -- IMPORT
+		local mode=0
 		if clearscene == true do (
 			-- resetMaxFile #noprompt -- seems to be slower
 			delete $*
@@ -3133,9 +3241,10 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 		fsource = GetOpenFileName \
 			caption:"Select Xnalara File" \
 			types: (
+				"All Supported Formats (*.mesh, *xps, *.ascii)|*.MESH;*.XPS;*.ASCII|" + \
 				"Binary File(*.mesh)|*.MESH|" + \
 				"Text File(*.ascii)|*.ASCII|" + \
-				"XNAaraL's Plagiarism Studios(*.xps)|" + \
+				"XNA Posing Studio (*.xps)|" + \	--XNAaraL's Plagiarism Studios
 				"*.XPS|Pose File(*.pose)|*.POSE|" + \
 				"All files (*.*)|*.*|"
 				)
@@ -3144,12 +3253,13 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 			fname=getFilenameFile fsource
 			fsize=getFileSize fsource
 			fext=uppercase (getFilenameType fsource)
-			
+			hasBoneRotations = false
 			meshArray = (xnalara_format \
 				skeleton:(xnalara_skeleton \
 					name:#() \
 					parent:#() \
-					position:#()) \
+					position:#() \
+					rotation:#()) \
 				mesh:(xnalara_mesh \
 					render_group:#() \
 					textures:(xnalara_textures \
@@ -3182,23 +3292,58 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 			clearlistener()
 			
 			bone_count = 0
-			case fext of (
-			".MESH": (
+			if fext == ".MESH" or fext == ".XPS" then (
 				f = fopen fsource "rb"
 				bone_count = readlong f #unsigned
+				/*
+					Sadly version control was never initially established in the format spec.
+					And as a result the format as evolved as the source was left open and
+					recompiled by others. Or even ironically beinf adopted by others as a 
+					royalty free format to transition 3D geometry
+					
+					XNAaraL's Contributions are mostly unknown he made various changes
+					to the format every time he made a small update to his recompiled version
+					of xnalara called Xna Posing Studios (XPS)
+					I got the spec for XNAaraL format from johnzero7, find more on his github
+					https://github.com/johnzero7
+					
+					id-daemon's contribution I assume is less dramtic to the spec just adding
+					rotation param to the bone data. Presumably this just applied to the 
+					.mesh.ascii format
+					
+					- mariokart64n
+				*/
 				
-				if bone_count>=0xFFFF do (
-					pos = validatebones f fsize
-					if pos!=-1 do (
-						fseek f pos #seek_set
-						bone_count = readlong f #unsigned
+				isXNAaraL = false
+				if bone_count==0x0004EEA0 do (
+					-- check is bone count contain's XNAaraL signature
+					isXNAaraL = true
+					logErrorWeights = ""
+					ver_major = readshort f #unsigned
+					ver_minor = readshort f #unsigned
+					XNAaraL = ReadXNAaraLString &f (readbyte f #unsigned)
+					settingsLen = readlong f #unsigned
+					compNetworkName = ReadXNAaraLString &f (readbyte f #unsigned)
+					compUserName = ReadXNAaraLString &f (readbyte f #unsigned)
+					fullFilename = ReadXNAaraLString &f (readbyte f #unsigned)
+					--format "ver_major:\t%\tver_minor:\t%\n" ver_major ver_minor
+					if ver_major <= 1 and ver_minor <= 12 then (
+						fseek f (settingsLen * 4) #seek_cur
 						)
-					format "New Bone Count % @ 0x%\n" bone_count ((bit.intAsHex(pos))as string)
+					else (
+						skipTheCrap &f settingsLen
+						)
+					--format "NewBoneCount @ 0x%\n" (bit.intAsHex((ftell f)as integer))
+					boneCount = readlong f #unsigned
+					--print boneCount
+					if boneCount <= 0xFFFF do (
+						bone_count = boneCount
+						)
 					)
-				
-				if bone_count<=0xFFFF then (
+				if bone_count <= 0xFFFF then (
+					-- simple check to see if we don't have a retarded bone count..
 					for i = 1 to bone_count do (
-						meshArray.skeleton.name[i] = renamedup meshArray.skeleton.name (ReadFixedString f (validatestrlength f))
+						meshArray.skeleton.name[i] = renamedup meshArray.skeleton.name (if isXNAaraL then (ReadXNAaraLString &f (readbyte f #unsigned)) else (ReadFixedString f (readbyte f #unsigned)))
 						meshArray.skeleton.parent[i] = (readshort f)+1
 						bone_position = ([(readfloat f),(readfloat f),(readfloat f)]*metric_scale*rescale)
 						meshArray.skeleton.position[i] = [(bone_position[1]),(-bone_position[3]),(bone_position[2])]
@@ -3217,26 +3362,26 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 							meshArray.mesh.geometry.faces[i]=#()
 							bonePallete[i]=#()
 							
-							meshArray.mesh.render_group[i] = getRenderGroup (ReadFixedString f (validatestrlength f))
+							meshArray.mesh.render_group[i] = getRenderGroup (if isXNAaraL then (ReadXNAaraLString &f (readbyte f #unsigned)) else (ReadFixedString f (readbyte f #unsigned)))
 							uvw_count=readlong f #unsigned
 							meshArray.mesh.textures.filepath[i] = #()
 							meshArray.mesh.textures.uv_channel[i] = #()
 							for x = 1 to uvw_count do (meshArray.mesh.geometry.uvw[i][x] = #())
 							for x = 1 to (readlong f #unsigned) do (
-								meshArray.mesh.textures.filepath[i][x] = filenameFromPath (ReadFixedString f (validatestrlength f))
+								meshArray.mesh.textures.filepath[i][x] = filenameFromPath (if isXNAaraL then (ReadXNAaraLString &f (readbyte f #unsigned)) else (ReadFixedString f (readbyte f #unsigned)))
 								meshArray.mesh.textures.uv_channel[i][x] = (readlong f #unsigned)+1
 								)
 							for x = 1 to (readlong f #unsigned) do (
-								vert_pos = [(readfloat f),(readfloat f),(readfloat f)]*metric_scale*rescale
-								vert_nrm = [(readfloat f),(readfloat f),(readfloat f)]
-								vert_clr = [(readbyte f #unsigned),(readbyte f #unsigned),(readbyte f #unsigned),(readbyte f #unsigned)]/255
+								vert_pos = [(readfloat f), (readfloat f), (readfloat f)] * metric_scale * rescale
+								vert_nrm = [(readfloat f), (readfloat f), (readfloat f)]
+								vert_clr = [(readbyte f #unsigned), (readbyte f #unsigned), (readbyte f #unsigned), (readbyte f #unsigned)] / 255.0
 								for y = 1 to uvw_count do (
 									meshArray.mesh.geometry.uvw[i][y][x] = [(readfloat f),(1+(-readfloat f)),0]
 									)
 								if validateTangent == true do (
 									validateTangent = false
-									tangON = (validateWeight f bone_count)
-									if tangON == true then(tangON=false)else(tangON=true)
+									if (validateWeight f bone_count) then (tangON=false) else (tangON=true)
+									format "Tangent Present: %\n" tangON
 									)
 								if tangON == true do (
 									for y = 1 to uvw_count do (
@@ -3244,16 +3389,19 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 										)
 									)
 								if bone_count!=0 do (
-									meshArray.mesh.geometry.boneid[i][x] = [1,1,1,1] + [readshort f #unsigned,readshort f #unsigned,readshort f #unsigned,readshort f #unsigned]
-									meshArray.mesh.geometry.weight[i][x] = [(readfloat f),(readfloat f),(readfloat f),(readfloat f)]
+									meshArray.mesh.geometry.boneid[i][x] = [readshort f #unsigned, readshort f #unsigned, readshort f #unsigned, readshort f #unsigned] + 1
+									meshArray.mesh.geometry.weight[i][x] = [(readfloat f), (readfloat f), (readfloat f), (readfloat f)]
 									for b = 1 to 4 do (
 										if meshArray.mesh.geometry.boneid[i][x][b] > bone_count do (
-											format "Error:\n\tFile Contains Invalid Bone ID\n\tBoneID:(%) was requested from the skeleton(%)\n" \
-												meshArray.mesh.geometry.boneid[i][x][b] bone_count
+											meshArray.mesh.geometry.boneid[i][x] = [1, 0, 0, 0]
+											meshArray.mesh.geometry.weight[i][x] = [1.0, 0.0, 0.0, 0.0]
+											logErrorWeights += "0x" + (bit.intAsHex((ftell f)as integer))
+											logErrorWeights += "\tError:\n\tFile Contains Invalid Bone ID\n\tBoneID:(" + (meshArray.mesh.geometry.boneid[i][x][b] as string)
+											logErrorWeights += ") was requested from the skeleton(BoneCount" + (bone_count as string) + ")\n" \
 											)
 										)
 									for b = 1 to 4 do (
-										bonePallete[i] = ifUniqueAppend bonePallete[i] meshArray.mesh.geometry.boneid[i][x][b]
+										ifUniqueAppend &bonePallete[i] meshArray.mesh.geometry.boneid[i][x][b]
 										)
 									)
 								meshArray.mesh.geometry.position[i][x] = [(vert_pos[1]),(-vert_pos[3]),(vert_pos[2])]
@@ -3273,6 +3421,9 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 								meshArray.mesh.geometry.faces[i][x] = [fa,fc,fb] + 1
 								)
 							)
+						if logErrorWeights.count > 0 do (
+							print logErrorWeights
+							)
 						)
 					)
 				else (
@@ -3281,15 +3432,28 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 				format "Last Read @ 0x%\n" (bit.intAsHex((ftell f)as integer))
 				fclose f
 				)
-			".ASCII": (
+			else if fext == ".ASCII" then (
 				f = MemStreamMgr.openFile fsource
 				bone_count=(readDelimitedString (f.readLine() as stringstream) " ") as integer
 				for i = 1 to bone_count do (
 					meshArray.skeleton.name[i] = renamedup meshArray.skeleton.name (f.readLine())
 					meshArray.skeleton.parent[i] = ((readDelimitedString (f.readLine() as stringstream) " ") as integer)+1
-					bone_position = (f.readLine()) as stringstream
-					bone_position = [(readDelimitedString bone_position " " as float), (readDelimitedString bone_position " " as float),(readDelimitedString bone_position "" as float)]
-					meshArray.skeleton.position[i] = [(bone_position[1]),(-bone_position[3]),(bone_position[2])]*metric_scale*rescale
+					bone_position = filterstring (f.readLine()) " "
+					--bone_position = (f.readLine()) as stringstream
+					--bone_position = [(readDelimitedString bone_position " " as float), (readDelimitedString bone_position " " as float),(readDelimitedString bone_position "" as float)]
+					meshArray.skeleton.position[i] = [0.0, 0.0, 0.0]
+					meshArray.skeleton.rotation[i] = [0.0, 0.0, 0.0]
+					if bone_position.count >= 3 do (
+						meshArray.skeleton.position[i] = [(bone_position[1] as float), -(bone_position[3] as float), (bone_position[2] as float)] * metric_scale * rescale
+						)
+					if bone_position.count >= 6 do (
+						meshArray.skeleton.rotation[i] = [(bone_position[4] as float), (-bone_position[6] as float), (bone_position[5] as float)]
+						if hasBoneRotations == false do hasBoneRotations = true
+						)
+					if bone_position.count >= 7 do (
+						meshArray.skeleton.rotation[i] = [(bone_position[4] as float), (-bone_position[6] as float), (bone_position[5] as float), (bone_position[7] as float)]
+						if hasBoneRotations == false do hasBoneRotations = true
+						)
 					)
 				if meshON == true do (
 					meshCount=(readDelimitedString (f.readLine() as stringstream) " ") as integer
@@ -3306,39 +3470,78 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 						
 						meshArray.mesh.render_group[i] = getRenderGroup (f.readLine())
 						uvw_count = (readDelimitedString (f.readLine() as stringstream) " ") as integer
+						--format "mesh:\t%\tuvw_count:\t %\n" i uvw_count
 						meshArray.mesh.textures.filepath[i] = #()
 						meshArray.mesh.textures.uv_channel[i] = #()
-						for x = 1 to uvw_count do (
-							meshArray.mesh.geometry.uvw[i][x] = #()
-							)
 						for x = 1 to ((readDelimitedString (f.readLine() as stringstream) " ") as integer) do (
 							meshArray.mesh.textures.filepath[i][x] = filenameFromPath (f.readLine())
 							meshArray.mesh.textures.uv_channel[i][x] = ((readDelimitedString (f.readLine() as stringstream) " ") as integer)+1
 							)
-						for x = 1 to ((readDelimitedString (f.readLine() as stringstream) " ") as integer) do (
-							vert_pos = f.readLine() as stringstream
-							vert_nrm = f.readLine() as stringstream
-							vert_clr = f.readLine() as stringstream
-							vert_pos = [(readDelimitedString vert_pos " " as float), (readDelimitedString vert_pos " " as float),(readDelimitedString vert_pos "" as float)]*metric_scale*rescale
-							vert_nrm = [(readDelimitedString vert_nrm " " as float), (readDelimitedString vert_nrm " " as float),(readDelimitedString vert_nrm "" as float)]
-							vert_clr = [(readDelimitedString vert_clr " " as float), (readDelimitedString vert_clr " " as float),(readDelimitedString vert_clr " " as float),(readDelimitedString vert_clr "" as float)]/255
-							for y = 1 to uvw_count do (
-								vert_uvw = f.readLine() as stringstream
-								vert_uvw = [(readDelimitedString vert_uvw " " as float),(readDelimitedString vert_uvw "" as float)]
-								meshArray.mesh.geometry.uvw[i][y][x] = [(vert_uvw[1]),(1+(-vert_uvw[2])),0]
+						vert_cnt = try((readDelimitedString (f.readLine() as stringstream) " ") as integer)catch(0)
+						if vert_cnt > 0 do (
+							meshArray.mesh.geometry.position[i][vert_cnt] = [0.0, 0.0, 0.0]
+							meshArray.mesh.geometry.normal[i][vert_cnt] = [0.0, 0.0, 0.0]
+							meshArray.mesh.geometry.tangent[i][vert_cnt] = [0.0, 0.0, 0.0]
+							meshArray.mesh.geometry.colour[i][vert_cnt] = [0.0, 0.0, 0.0, 0.0]
+							meshArray.mesh.geometry.weight[i][vert_cnt] = #()
+							meshArray.mesh.geometry.boneid[i][vert_cnt] = #()
+							meshArray.mesh.geometry.uvw[i]=#()
+							for x = 1 to uvw_count do (
+								meshArray.mesh.geometry.uvw[i][x] = #()
+								meshArray.mesh.geometry.uvw[i][x][vert_cnt] = [0.0, 0.0, 0.0]
 								)
-							if bone_count!=0 do (
-								vert_bi=f.readLine() as stringstream
-								vert_bw=f.readLine() as stringstream
-								meshArray.mesh.geometry.boneid[i][x] = [((readDelimitedString vert_bi " " as integer)+1),((readDelimitedString vert_bi " " as integer)+1),((readDelimitedString vert_bi " " as integer)+1),((readDelimitedString vert_bi "" as integer)+1)]
-								meshArray.mesh.geometry.weight[i][x] = [(readDelimitedString vert_bw " " as float),(readDelimitedString vert_bw " " as float),(readDelimitedString vert_bw " " as float),(readDelimitedString vert_bw "" as float)]
-									for b = 1 to 4 do (
-										bonePallete[i] = ifUniqueAppend bonePallete[i] meshArray.mesh.geometry.boneid[i][x][b]
+							for x = 1 to vert_cnt do (
+								vert_pos = f.readLine() as stringstream
+								vert_nrm = f.readLine() as stringstream
+								vert_clr = f.readLine() as stringstream
+								vert_pos = [(readDelimitedString vert_pos " " as float), (readDelimitedString vert_pos " " as float),(readDelimitedString vert_pos "" as float)]*metric_scale*rescale
+								vert_nrm = [(readDelimitedString vert_nrm " " as float), (readDelimitedString vert_nrm " " as float),(readDelimitedString vert_nrm "" as float)]
+								vert_clr = [(readDelimitedString vert_clr " " as float), (readDelimitedString vert_clr " " as float),(readDelimitedString vert_clr " " as float),(readDelimitedString vert_clr "" as float)]/255
+								for y = 1 to uvw_count do (
+									vert_uvw = f.readLine() as stringstream
+									vert_uvw = [(readDelimitedString vert_uvw " " as float),(readDelimitedString vert_uvw "" as float)]
+									meshArray.mesh.geometry.uvw[i][y][x] = [(vert_uvw[1]),(1+(-vert_uvw[2])),0]
+									)
+								meshArray.mesh.geometry.weight[i][x] = #()
+								meshArray.mesh.geometry.boneid[i][x] = #()
+								if bone_count > 0 do (
+									vert_bi = f.readLine() as stringstream
+									vert_bw = f.readLine() as stringstream
+									
+									-- Aug 13 2019
+									--      Daemon's format adds any number of weights,
+									--      this caused a crash in my importer...
+									--      Added dynamic reading for weights to fix this issue
+									es = false
+									b = 1
+									while es == false do (
+										append meshArray.mesh.geometry.boneid[i][x] ((readDelimitedString vert_bi " " as integer) + 1)
+										b += 1
+										es = eof vert_bi
 										)
+									es = false
+									b = 1
+									while es == false do (
+										append meshArray.mesh.geometry.weight[i][x] (readDelimitedString vert_bw " " as float)
+										b += 1
+										es = eof vert_bw
+										)
+									if meshArray.mesh.geometry.boneid[i][x].count == 0 do (
+										meshArray.mesh.geometry.boneid[i][x] = #(1)
+										)
+									if meshArray.mesh.geometry.weight[i][x].count == 0 do (
+										meshArray.mesh.geometry.weight[i][x] = #(1.0)
+										)
+									--meshArray.mesh.geometry.boneid[i][x] = [((readDelimitedString vert_bi " " as integer)+1),((readDelimitedString vert_bi " " as integer)+1),((readDelimitedString vert_bi " " as integer)+1),((readDelimitedString vert_bi "" as integer)+1)]
+									--meshArray.mesh.geometry.weight[i][x] = [(readDelimitedString vert_bw " " as float),(readDelimitedString vert_bw " " as float),(readDelimitedString vert_bw " " as float),(readDelimitedString vert_bw "" as float)]
+									for b = 1 to meshArray.mesh.geometry.boneid[i][x].count do (
+										ifUniqueAppend &bonePallete[i] meshArray.mesh.geometry.boneid[i][x][b]
+										)
+									)
+								meshArray.mesh.geometry.position[i][x] = [(vert_pos[1]),(-vert_pos[3]),(vert_pos[2])]
+								meshArray.mesh.geometry.normal[i][x] = [(vert_nrm[1]),(-vert_nrm[3]),(vert_nrm[2])]
+								meshArray.mesh.geometry.colour[i][x] = [(vert_clr[1]),(-vert_clr[3]),(vert_clr[2])]
 								)
-							meshArray.mesh.geometry.position[i][x] = [(vert_pos[1]),(-vert_pos[3]),(vert_pos[2])]
-							meshArray.mesh.geometry.normal[i][x] = [(vert_nrm[1]),(-vert_nrm[3]),(vert_nrm[2])]
-							meshArray.mesh.geometry.colour[i][x] = [(vert_clr[1]),(-vert_clr[3]),(vert_clr[2])]
 							)
 						for x = 1 to ((readDelimitedString (f.readLine() as stringstream) " ") as integer) do (
 							face = f.readLine() as stringstream
@@ -3351,93 +3554,7 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 					)
 				MemStreamMgr.close f
 				)
-			".XPS":(
-				f = fopen fsource "rb"
-				bone_count = readlong f #unsigned
-				
-				if bone_count>=0xFFFF do (
-					pos = validatebones f fsize
-					if pos!=-1 do (
-						fseek f pos #seek_set
-						bone_count = readlong f #unsigned
-						)
-					format "New Bone Count % @ 0x%\n" bone_count ((bit.intAsHex(pos))as string)
-					)
-				
-				if bone_count<=0xFFFF then (
-					for i = 1 to bone_count do (
-						meshArray.skeleton.name[i] = renamedup meshArray.skeleton.name (ReadFixedString f (validatestrlength f))
-						meshArray.skeleton.parent[i] = (readshort f)+1
-						bone_position = ([(readfloat f),(readfloat f),(readfloat f)]*metric_scale*rescale)
-						meshArray.skeleton.position[i] = [(bone_position[1]),(-bone_position[3]),(bone_position[2])]
-						)
-					if meshON == true do (
-						mesh_count = readlong f #unsigned
-						validateTangent = true
-						for i = 1 to mesh_count do (
-							meshArray.mesh.geometry.position[i]=#()
-							meshArray.mesh.geometry.normal[i]=#()
-							meshArray.mesh.geometry.tangent[i]=#()
-							meshArray.mesh.geometry.uvw[i]=#()
-							meshArray.mesh.geometry.colour[i]=#()
-							meshArray.mesh.geometry.weight[i]=#()
-							meshArray.mesh.geometry.boneid[i]=#()
-							meshArray.mesh.geometry.faces[i]=#()
-							bonePallete[i]=#()
-							
-							meshArray.mesh.render_group[i] = getRenderGroup (ReadFixedString f (validatestrlength f))
-							uvw_count=readlong f #unsigned
-							meshArray.mesh.textures.filepath[i] = #()
-							meshArray.mesh.textures.uv_channel[i] = #()
-							for x = 1 to uvw_count do (meshArray.mesh.geometry.uvw[i][x] = #())
-							for x = 1 to (readlong f #unsigned) do (
-								meshArray.mesh.textures.filepath[i][x] = filenameFromPath (ReadFixedString f (validatestrlength f))
-								meshArray.mesh.textures.uv_channel[i][x] = (readlong f #unsigned)+1
-								)
-							for x = 1 to (readlong f #unsigned) do (
-								vert_pos = [(readfloat f),(readfloat f),(readfloat f)]*metric_scale*rescale
-								vert_nrm = [(readfloat f),(readfloat f),(readfloat f)]
-								vert_clr = [(readbyte f #unsigned),(readbyte f #unsigned),(readbyte f #unsigned),(readbyte f #unsigned)]/255
-								for y = 1 to uvw_count do (
-									meshArray.mesh.geometry.uvw[i][y][x] = [(readfloat f),(1+(-readfloat f)),0]
-									)
-								if validateTangent == true do (
-									validateTangent = false
-									tangON = (validateWeight f bone_count)
-									if tangON == true then(tangON=false)else(tangON=true)
-									)
-								if tangON == true do (
-									for y = 1 to uvw_count do (
-										meshArray.mesh.geometry.tangent[i][y] = [(readfloat f),(readfloat f),(readfloat f),(readfloat f)]
-										)
-									)
-								if bone_count!=0 do (
-									meshArray.mesh.geometry.boneid[i][x] = [(readshort f #unsigned+1),(readshort f #unsigned+1),(readshort f #unsigned+1),(readshort f #unsigned+1)]
-									meshArray.mesh.geometry.weight[i][x] = [(readfloat f),(readfloat f),(readfloat f),(readfloat f)]
-									for b = 1 to 4 do (
-										bonePallete[i] = ifUniqueAppend bonePallete[i] meshArray.mesh.geometry.boneid[i][x][b]
-										)
-									)
-								meshArray.mesh.geometry.position[i][x] = [(vert_pos[1]),(-vert_pos[3]),(vert_pos[2])]
-								meshArray.mesh.geometry.normal[i][x] = [(vert_nrm[1]),(-vert_nrm[3]),(vert_nrm[2])]
-								meshArray.mesh.geometry.colour[i][x] = [(vert_clr[1]),(-vert_clr[3]),(vert_clr[2])]
-								)
-							for x = 1 to (readlong f #unsigned) do (
-								fa = readlong f #unsigned
-								fb = readlong f #unsigned
-								fc = readlong f #unsigned
-								meshArray.mesh.geometry.faces[i][x] = [fa,fc,fb] + 1
-								)
-							)
-						)
-					)
-				else (
-					messagebox "Error!\nFailed to Parse File"
-					)
-				format "Last Read @ 0x%\n" ((bit.intAsHex(ftell f))as string)
-				fclose f
-				)
-			".POSE":(
+			else if fext == ".POSE" then (
 				f=MemStreamMgr.openFile fsource
 				
 				i=0
@@ -3453,12 +3570,206 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 				
 				MemStreamMgr.close f
 				)
-			default:(messagebox ((fext as string)+" Not Supported"))
-			)
-			
+			else (messagebox ((fext as string)+" Not Supported"))
+			/*	OLD XPS IMPORT CODE
+				".XPS":(
+					f = fopen fsource "rb"
+					bone_count = readlong f #unsigned
+					
+					
+					mode = 0 -- this script wroks by seeking the bone list, and guess what? XNAaraL added in a dummy bone list.. so great time to skip it!
+					
+					case mode of (
+						0: ( -- old versions, pre 2017 ?
+							if bone_count>=0xFFFF do (
+								pos = validatebones f fsize
+								if pos!=-1 do (
+									fseek f 0xA0 #seek_set
+									bone_count = readlong f #unsigned
+									)
+								format "New Bone Count % @ 0x%\n" bone_count ((bit.intAsHex(pos))as string)
+								)
+							if bone_count<=0xFFFF then (
+								for i = 1 to bone_count do (
+									meshArray.skeleton.name[i] = renamedup meshArray.skeleton.name (ReadFixedString f (validatestrlength f))
+									meshArray.skeleton.parent[i] = (readshort f)+1
+									bone_position = ([(readfloat f),(readfloat f),(readfloat f)]*metric_scale*rescale)
+									meshArray.skeleton.position[i] = [(bone_position[1]),(-bone_position[3]),(bone_position[2])]
+									)
+								if meshON == true do (
+									mesh_count = readlong f #unsigned
+									validateTangent = true
+									for i = 1 to mesh_count do (
+										meshArray.mesh.geometry.position[i]=#()
+										meshArray.mesh.geometry.normal[i]=#()
+										meshArray.mesh.geometry.tangent[i]=#()
+										meshArray.mesh.geometry.uvw[i]=#()
+										meshArray.mesh.geometry.colour[i]=#()
+										meshArray.mesh.geometry.weight[i]=#()
+										meshArray.mesh.geometry.boneid[i]=#()
+										meshArray.mesh.geometry.faces[i]=#()
+										bonePallete[i]=#()
+										
+										meshArray.mesh.render_group[i] = getRenderGroup (ReadFixedString f (validatestrlength f))
+										uvw_count=readlong f #unsigned
+										meshArray.mesh.textures.filepath[i] = #()
+										meshArray.mesh.textures.uv_channel[i] = #()
+										for x = 1 to uvw_count do (meshArray.mesh.geometry.uvw[i][x] = #())
+										for x = 1 to (readlong f #unsigned) do (
+											meshArray.mesh.textures.filepath[i][x] = filenameFromPath (ReadFixedString f (validatestrlength f))
+											meshArray.mesh.textures.uv_channel[i][x] = (readlong f #unsigned)+1
+											)
+										for x = 1 to (readlong f #unsigned) do (
+											vert_pos = [(readfloat f),(readfloat f),(readfloat f)]*metric_scale*rescale
+											vert_nrm = [(readfloat f),(readfloat f),(readfloat f)]
+											vert_clr = [(readbyte f #unsigned),(readbyte f #unsigned),(readbyte f #unsigned),(readbyte f #unsigned)]/255
+											for y = 1 to uvw_count do (
+												meshArray.mesh.geometry.uvw[i][y][x] = [(readfloat f),(1+(-readfloat f)),0]
+												)
+											if validateTangent == true do (
+												validateTangent = false
+												tangON = (validateWeight f bone_count)
+												if tangON == true then(tangON=false)else(tangON=true)
+												)
+											if tangON == true do (
+												for y = 1 to uvw_count do (
+													meshArray.mesh.geometry.tangent[i][y] = [(readfloat f),(readfloat f),(readfloat f),(readfloat f)]
+													)
+												)
+											if bone_count!=0 do (
+												meshArray.mesh.geometry.boneid[i][x] = [(readshort f #unsigned+1),(readshort f #unsigned+1),(readshort f #unsigned+1),(readshort f #unsigned+1)]
+												meshArray.mesh.geometry.weight[i][x] = [(readfloat f),(readfloat f),(readfloat f),(readfloat f)]
+												for b = 1 to 4 do (
+													bonePallete[i] = ifUniqueAppend bonePallete[i] meshArray.mesh.geometry.boneid[i][x][b]
+													)
+												)
+											meshArray.mesh.geometry.position[i][x] = [(vert_pos[1]),(-vert_pos[3]),(vert_pos[2])]
+											meshArray.mesh.geometry.normal[i][x] = [(vert_nrm[1]),(-vert_nrm[3]),(vert_nrm[2])]
+											meshArray.mesh.geometry.colour[i][x] = [(vert_clr[1]),(-vert_clr[3]),(vert_clr[2])]
+											)
+										for x = 1 to (readlong f #unsigned) do (
+											fa = readlong f #unsigned
+											fb = readlong f #unsigned
+											fc = readlong f #unsigned
+											meshArray.mesh.geometry.faces[i][x] = [fa,fc,fb] + 1
+											)
+										)
+									)
+								)
+							else (
+								messagebox "Error!\nFailed to Parse File"
+								)
+							)
+						1: (
+							i = 0
+							str = ""
+							while str!="root ground" and (ftell f)<fsize do (
+								while i!=0x72 and (ftell f)<fsize do (
+									i  = readbyte f #unsigned
+									)
+								str  = "r" + (ReadFixedString f 10)
+								fseek f -10 #seek_cur
+								)
+							if str == "root ground" then (
+								fseek f -5 #seek_cur
+								bone_count = readlong f #unsigned
+								for i = 1 to bone_count do (
+									str = ""
+									i = 0
+									while i!=0x0A do (
+										i = readbyte f #unsigned
+										if i != 0x0A do (
+											str += bit.IntAsChar i
+											)
+										)
+									)
+								bone_count = 32323232
+								if bone_count>=0xFFFF do (
+									pos = validatebones f fsize
+									if pos!=-1 do (
+										fseek f 0xA0 #seek_set
+										bone_count = readlong f #unsigned
+										)
+									format "New Bone Count % @ 0x%\n" bone_count ((bit.intAsHex(pos))as string)
+									)
+								for i = 1 to bone_count do (
+									meshArray.skeleton.name[i] = renamedup meshArray.skeleton.name (ReadFixedString f (validatestrlength f))
+									meshArray.skeleton.parent[i] = (readshort f)+1
+									bone_position = ([(readfloat f),(readfloat f),(readfloat f)]*metric_scale*rescale)
+									meshArray.skeleton.position[i] = [(bone_position[1]),(-bone_position[3]),(bone_position[2])]
+									)
+								if meshON == true do (
+									mesh_count = readlong f #unsigned
+									validateTangent = true
+									for i = 1 to mesh_count do (
+										meshArray.mesh.geometry.position[i]=#()
+										meshArray.mesh.geometry.normal[i]=#()
+										meshArray.mesh.geometry.tangent[i]=#()
+										meshArray.mesh.geometry.uvw[i]=#()
+										meshArray.mesh.geometry.colour[i]=#()
+										meshArray.mesh.geometry.weight[i]=#()
+										meshArray.mesh.geometry.boneid[i]=#()
+										meshArray.mesh.geometry.faces[i]=#()
+										bonePallete[i]=#()
+										
+										meshArray.mesh.render_group[i] = getRenderGroup (ReadFixedString f (validatestrlength f))
+										uvw_count=readlong f #unsigned
+										meshArray.mesh.textures.filepath[i] = #()
+										meshArray.mesh.textures.uv_channel[i] = #()
+										for x = 1 to uvw_count do (meshArray.mesh.geometry.uvw[i][x] = #())
+										for x = 1 to (readlong f #unsigned) do (
+											meshArray.mesh.textures.filepath[i][x] = filenameFromPath (ReadFixedString f (validatestrlength f))
+											meshArray.mesh.textures.uv_channel[i][x] = (readlong f #unsigned)+1
+											)
+										for x = 1 to (readlong f #unsigned) do (
+											vert_pos = [(readfloat f),(readfloat f),(readfloat f)]*metric_scale*rescale
+											vert_nrm = [(readfloat f),(readfloat f),(readfloat f)]
+											vert_clr = [(readbyte f #unsigned),(readbyte f #unsigned),(readbyte f #unsigned),(readbyte f #unsigned)]/255
+											for y = 1 to uvw_count do (
+												meshArray.mesh.geometry.uvw[i][y][x] = [(readfloat f),(1+(-readfloat f)),0]
+												)
+											if validateTangent == true do (
+												validateTangent = false
+												tangON = (validateWeight f bone_count)
+												if tangON == true then(tangON=false)else(tangON=true)
+												)
+											if tangON == true do (
+												for y = 1 to uvw_count do (
+													meshArray.mesh.geometry.tangent[i][y] = [(readfloat f),(readfloat f),(readfloat f),(readfloat f)]
+													)
+												)
+											if bone_count!=0 do (
+												meshArray.mesh.geometry.boneid[i][x] = [(readshort f #unsigned+1),(readshort f #unsigned+1),(readshort f #unsigned+1),(readshort f #unsigned+1)]
+												meshArray.mesh.geometry.weight[i][x] = [(readfloat f),(readfloat f),(readfloat f),(readfloat f)]
+												for b = 1 to 4 do (
+													bonePallete[i] = ifUniqueAppend bonePallete[i] meshArray.mesh.geometry.boneid[i][x][b]
+													)
+												)
+											meshArray.mesh.geometry.position[i][x] = [(vert_pos[1]),(-vert_pos[3]),(vert_pos[2])]
+											meshArray.mesh.geometry.normal[i][x] = [(vert_nrm[1]),(-vert_nrm[3]),(vert_nrm[2])]
+											meshArray.mesh.geometry.colour[i][x] = [(vert_clr[1]),(-vert_clr[3]),(vert_clr[2])]
+											)
+										for x = 1 to (readlong f #unsigned) do (
+											fa = readlong f #unsigned
+											fb = readlong f #unsigned
+											fc = readlong f #unsigned
+											meshArray.mesh.geometry.faces[i][x] = [fa,fc,fb] + 1
+											)
+										)
+									)
+								)
+							else (
+								format "failed to find root ground"
+								)
+							)
+						)
+					format "Last Read @ 0x%\n" ((bit.intAsHex(ftell f))as string)
+					fclose f
+					)
+				*/
 			-- print meshArray
-			if bone_count<=0xFFFF AND bone_count!=0 do (
-				if boneON == true do (
+			if bone_count<=0xFFFF do (
+				if boneON == true and bone_count > 0 do (
 					layer_2 = layermanager.newLayerFromName "Bones"
 					layer_3 = layermanager.newLayerFromName "Bones_Unused"
 					layer_2 = LayerManager.getLayerFromName "Bones"
@@ -3495,30 +3806,60 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 								)
 							)
 						)
+					bone_matrix = #()
 					for i = 1 to bone_count do (
-						-- bonSize=boneSize*metric_scale*rescale
-						-- if guessBone==true do(
-						-- if bsenable==true or boneSize==0 or boneSize==undefined do (bonSize=((distance startPos endPos)/100)*metric_scale*rescale))
-						b = bonesys.createbone meshArray.skeleton.position[i] posArray[i] [0,1,0]
-						-- b = bonesys.createbone meshArray.skeleton.position[i] (meshArray.skeleton.position[i]+[0,0,1]) [0,1,0]
-						b.name  = meshArray.skeleton.name[i]
-						b.width = b.height = 1
-						b.length = distance meshArray.skeleton.position[i] posArray[i]
-						layer_2.addNode b
-						if b.length<=1 do (b.length=1)
-						if (findItem meshArray.skeleton.parent i)==0 do (b.length=2)
-						if (meshArray.skeleton.parent[i])==0 do (b.length=2)
-						if guessSize == true do (b.width = b.height = b.length/2;if b.width>=4 do (b.width = b.height = 2))
-						if boneLinks == true do (b.showLinks = b.showLinksOnly = true)
-						if boneEnable == false do (b.boneEnable=false)
-						if boneSeeThru == true do (b.xray = on)
-						if orientate == true do (b.transform = matrix_lookat [0,0,1] (matrix3 [1,0,0] [0,1,0] [0,0,1] meshArray.skeleton.position[i]) (matrix3 [1,0,0] [0,1,0] [0,0,1] posArray[i]))
-						if mshHde==true do(if (skipToString ((meshArray.skeleton.name[i]) as stringstream) "unused")==OK do (layer_3.addNode b;hide b))
-						boneArray[i]=b
+						b = getNodeByName meshArray.skeleton.name[i]
+						if b == undefined do (
+							-- bonSize=boneSize*metric_scale*rescale
+							-- if guessBone==true do(
+							-- if bsenable==true or boneSize==0 or boneSize==undefined do (bonSize=((distance startPos endPos)/100)*metric_scale*rescale))
+							b = bonesys.createbone meshArray.skeleton.position[i] posArray[i] [0, 0, 1]
+							-- b = bonesys.createbone meshArray.skeleton.position[i] (meshArray.skeleton.position[i]+[0,0,1]) [0,1,0]
+							b.name  = meshArray.skeleton.name[i]
+							b.width = b.height = 1
+							b.sidefins = b.frontfin = b.backfin = off
+							b.length = distance meshArray.skeleton.position[i] posArray[i]
+							layer_2.addNode b
+							if b.length<=1 do (b.length=1)
+							if (findItem meshArray.skeleton.parent i)==0 do (b.length=2)
+							if (meshArray.skeleton.parent[i])==0 do (b.length=2)
+							if guessSize == true do (b.width = b.height = b.length/2;if b.width>=4 do (b.width = b.height = 2))
+							if boneLinks == true do (b.showLinks = b.showLinksOnly = true)
+							if boneEnable == false do (b.boneEnable=false)
+							if boneSeeThru == true do (b.xray = on)
+							if orientate == true do (b.transform = matrix_lookat [0,0,1] (matrix3 [1,0,0] [0,1,0] [0,0,1] meshArray.skeleton.position[i]) (matrix3 [1,0,0] [0,1,0] [0,0,1] posArray[i]))
+							if mshHde==true do(if (skipToString ((meshArray.skeleton.name[i]) as stringstream) "unused")==OK do (layer_3.addNode b;hide b))
+							
+							if hasBoneRotations do (
+-- 								append bone_matrix (
+-- 									(eulerAngles \
+-- 										(radToDeg meshArray.skeleton.rotation[i].x) \
+-- 										(radToDeg meshArray.skeleton.rotation[i].y) \
+-- 										(radToDeg meshArray.skeleton.rotation[i].z)) as matrix3
+-- 									)
+								append bone_matrix (
+									(quat \
+										(meshArray.skeleton.rotation[i][1]) \
+										(meshArray.skeleton.rotation[i][2]) \
+										(meshArray.skeleton.rotation[i][3]) \
+										(meshArray.skeleton.rotation[i][4])) as matrix3
+									)
+								bone_matrix[bone_matrix.count] = inverse bone_matrix[bone_matrix.count]
+-- 								bone_matrix[bone_matrix.count] = rotateY bone_matrix[bone_matrix.count] 90
+-- 								bone_matrix[bone_matrix.count] = rotateZ bone_matrix[bone_matrix.count] 90
+								bone_matrix[bone_matrix.count].row4 = meshArray.skeleton.position[i]
+								b.transform = bone_matrix[bone_matrix.count]
+								)
+							)
+						boneArray[i] = b
 						)
 					for i = 1 to bone_count do (
 						boneArray[i].boneEnable = true
-						if meshArray.skeleton.parent[i] !=0 do boneArray[i].parent = boneArray[(meshArray.skeleton.parent[i])]
+						if meshArray.skeleton.parent[i] !=0 do (
+							--bone_transform = relativetoworld smdArray.skeleton.frame[1] smdArray.nodes i
+							--boneArray[i].transform *= boneArray[(meshArray.skeleton.parent[i])].transform
+							boneArray[i].parent = boneArray[(meshArray.skeleton.parent[i])]
+							)
 						)
 					)
 				if meshON == true do (
@@ -3568,6 +3909,9 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 							buildTVFaces msh
 							layer_1.addNode msh
 							msh.material = mat.materialList[matid]
+							if (try(meshArray.mesh.render_group[i].name)catch("")) != "" do (
+								msh.material.name = meshArray.mesh.render_group[i].name
+								)
 							msh.wirecolor = random (color 0 0 0) (color 255 255 255)
 							if matON == true then (
 								showTextureMap msh.material true
@@ -3575,9 +3919,13 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 							else (
 								msh.material.materialList[matid].Diffuse = random (color 0 0 0) (color 255 255 255)
 								)
-							for j = 1 to meshArray.mesh.geometry.faces[i].count do setTVFace msh j meshArray.mesh.geometry.faces[i][j]
-							meshop.setNumMaps msh (meshArray.mesh.geometry.uvw[i].count+1) keep:true
+							
+							
+							--for j = 1 to meshArray.mesh.geometry.faces[i].count do setTVFace msh j meshArray.mesh.geometry.faces[i][j]
+							--meshop.setNumMaps msh (meshArray.mesh.geometry.uvw[i].count+1) keep:true
 							for x = 1 to meshArray.mesh.geometry.uvw[i].count do (
+								meshop.setMapSupport msh (x - 1) true
+								meshop.defaultMapFaces msh x
 								for j = 1 to meshArray.mesh.geometry.uvw[i][x].count do (
 									meshOp.setMapVert msh x j meshArray.mesh.geometry.uvw[i][x][j]
 									)
@@ -3586,7 +3934,7 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 							
 							
 							
-							if skinON==true and boneON==true do (
+							if skinON==true and boneON==true and bone_count > 0 do (
 								select msh 
 								max modify mode
 								skinMod = skin ()
@@ -3602,21 +3950,68 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 								boneIDMap = #()
 								for x = 1 to num_bones do (
 									boneNameIdx = findItem meshArray.skeleton.name (skinOps.GetBoneName skinMod x 0)
-									if boneNameIdx==0 do (boneNameIdx=1);boneIDMap[x]=boneNameIdx
+									if boneNameIdx == 0 do boneNameIdx = 1
+									boneIDMap[x] = boneNameIdx
 									)
 								modPanel.setCurrentObject skinMod
 								
 								for x = 1 to meshArray.mesh.geometry.weight[i].count do (
 									bi = #()
 									wv = #()
-									for j = 1 to 4 do(
-									boneid = meshArray.mesh.geometry.boneid[i][x][j]
-									weight = meshArray.mesh.geometry.weight[i][x][j]
-									if weight!=0 do(
-									append bi (findItem boneIDMap boneid)
-									append wv weight))
+									wt = 0.0
+									for j = 1 to meshArray.mesh.geometry.boneid[i][x].count do (
+										boneid = meshArray.mesh.geometry.boneid[i][x][j]
+										weight = meshArray.mesh.geometry.weight[i][x][j]
+										
+										if weight > 0.0 do (
+											if weight > 1.0 do weight = 1.0
+											wt += weight
+											b = findItem bi (findItem boneIDMap boneid)
+											if b == 0 then (
+												append bi (findItem boneIDMap boneid)
+												append wv weight
+												)
+											else (
+												wv[b] += weight
+												)
+											)
+										)
+									wv[1] += wt
+-- 									if i == 1 and x < 10 do (
+-- 										print bi
+-- 										print wv
+-- 										format "--\n"
+-- 										)
 									skinOps.ReplaceVertexWeights skinMod x bi wv
 									)
+								)
+							
+							if normON do (
+								max modify mode
+								select msh
+								normMod = Edit_Normals()
+								normMod.selectBy = 1
+								normMod.displayLength = 0.50
+								normMod.showHandles = on
+								
+								modPanel.setCurrentObject normMod
+								addModifier msh normMod
+								
+								normMod.EditNormalsMod.SetSelection #{1..(normMod.GetNumNormals())}
+								--normMod.EditNormalsMod.Break()
+								normMod.EditNormalsMod.Reset()
+								for x = 1 to normMod.EditNormalsMod.GetNumFaces() do (
+									for j = 1 to 3 do (
+										normMod.SetNormalID x j meshArray.mesh.geometry.faces[i][x][j]
+										)
+									)
+								for x = 1 to meshArray.mesh.geometry.normal[i].count do (
+									subobjectLevel = 1
+									normMod.EditNormalsMod.SetNormal x meshArray.mesh.geometry.normal[i][x]
+									subobjectLevel = 0
+									)
+								normMod.EditNormalsMod.MakeExplicit()
+								enableSceneRedraw()
 								)
 							)
 						)
@@ -3624,6 +4019,26 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 						matArray = #()
 						faceArray = #()
 						faceadd = 0
+						
+						-- pre-pass find out how many uv channels before merging
+						max_uv_channel_count = 0
+						for i = 1 to mesh_count do (
+							if meshArray.mesh.geometry.uvw[i].count > max_uv_channel_count do (
+								max_uv_channel_count = meshArray.mesh.geometry.uvw[i].count
+								)
+							)
+						
+						for i = 1 to mesh_count do (
+							if meshArray.mesh.geometry.uvw[i].count < max_uv_channel_count do (
+								for z = meshArray.mesh.geometry.uvw[i].count to max_uv_channel_count do (
+									append meshArray.mesh.geometry.uvw[i] (
+										for j = 1 to meshArray.mesh.geometry.position[i].count collect ([0,0,0])
+										)
+									)
+								)
+							)
+						
+						
 						for i = 1 to mesh_count do (
 							matid = findItem sumArray meshArray.mesh.render_group[i].sum
 							for j = 1 to meshArray.mesh.geometry.faces[i].count do (
@@ -3633,6 +4048,8 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 							faceadd+=meshArray.mesh.geometry.position[i].count
 							join faceArray meshArray.mesh.geometry.faces[i]
 							setRGmaterial mat.materialList[matid] meshArray.mesh.render_group[i].id meshArray.mesh.textures.filepath[i] meshArray.mesh.textures.uv_channel[i] fpath
+							
+
 							)
 						for i = 2 to mesh_count do (
 							join meshArray.mesh.geometry.position[1] meshArray.mesh.geometry.position[i]
@@ -3640,11 +4057,16 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 							join meshArray.mesh.geometry.colour[1] meshArray.mesh.geometry.colour[i]
 							join meshArray.mesh.geometry.boneid[1] meshArray.mesh.geometry.boneid[i]
 							join meshArray.mesh.geometry.weight[1] meshArray.mesh.geometry.weight[i]
-							for z = 1 to bonePallete[i].count do (bonePallete[1] = IfUniqueAppend bonePallete[1] bonePallete[i][z])
+							for z = 1 to max_uv_channel_count do (
+								join meshArray.mesh.geometry.uvw[1][z] meshArray.mesh.geometry.uvw[i][z]
+								)
+							for z = 1 to bonePallete[i].count do (
+								IfUniqueAppend &bonePallete[1] bonePallete[i][z]
+								)
 							)
-						uvw_count = 1;for i = 1 to mesh_count do (
-							if meshArray.mesh.geometry.uvw[i].count>=uvw_count do (uvw_count=meshArray.mesh.geometry.uvw[i].count)
-							)
+						--uvw_count = 1;for i = 1 to mesh_count do (
+						--	if meshArray.mesh.geometry.uvw[i].count>=uvw_count do (uvw_count=meshArray.mesh.geometry.uvw[i].count)
+						--	)
 						msh = mesh \
 							vertices:meshArray.mesh.geometry.position[1] \
 							faces:faceArray \
@@ -3655,7 +4077,12 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 						msh.material = mat
 						msh.wirecolor = random (color 0 0 0) (color 255 255 255)
 						if matON == true then (
-							for j = 1 to mat.count do (showTextureMap msh.material.materialList[j] true)
+							for j = 1 to mat.count do (
+								if (try(meshArray.mesh.render_group[j].name)catch("")) != "" do (
+									msh.material.materialList[j].name = meshArray.mesh.render_group[j].name
+									)
+								showTextureMap msh.material.materialList[j] true
+								)
 							)
 						else (
 							for j = 1 to mat.count do (
@@ -3663,12 +4090,25 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 								)
 							)
 						-- for j = 1 to meshArray.mesh.geometry.position[1].count do (setNormal msh j meshArray.mesh.geometry.normal[1][j])
-						for j = 1 to faceArray.count do (
-							setTVFace msh j faceArray[j]
-							)
-						meshop.setNumMaps msh (uvw_count+1) keep:true
+						--for j = 1 to faceArray.count do (
+						--	setTVFace msh j faceArray[j]
+						--	)
+						--meshop.setNumMaps msh (uvw_count+1) keep:true
+						
+						
+						-- August 17 2019
+						-- Yeahh... I guess the previous import code to bring in UV's past channel 1
+						-- was not working when I had just always assumed it did lol
+						-- anyway on top of that I just patched this in and there is two line duplicates
+						-- so this eventually should be piped into a single function...
+						
+						
+						
+						/*
 						cnt=1
 						for i = 1 to mesh_count do (
+							meshop.setMapSupport msh (i - 1) true
+							meshop.defaultMapFaces msh i
 							for j = 1 to meshArray.mesh.geometry.uvw[i][1].count do (
 								for x = 1 to uvw_count do (
 									if x <= meshArray.mesh.geometry.uvw[i].count then (
@@ -3682,7 +4122,32 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 								)
 							-- update msh
 							)
-						if skinON==true and boneON==true do (
+							*/
+						
+						for x = 1 to max_uv_channel_count do (
+							--meshop.setMapSupport msh (x - 1) true
+							meshop.defaultMapFaces msh x
+							for j = 1 to meshArray.mesh.geometry.uvw[1][x].count do (
+								meshOp.setMapVert msh x j meshArray.mesh.geometry.uvw[1][x][j]
+								)
+							-- update msh
+							)
+							
+							
+							
+							
+						
+						-- August 16 2019
+						-- I was having alot of problems with the skins weights missing
+						-- So I added a bunch of checks (causes a slight slow down of course)
+						-- There are two duplicate skin functions one for combining mesh parts and one that doesnt
+						-- I was too lazy to route them to the same function so i just copied one to the other
+						-- seems fixed but might not.
+						-- may need to look at putting everything to the same function no duplicated lines
+						
+						
+						/*
+						if skinON==true and boneON==true and bone_count > 0 do (
 							select msh
 							max modify mode
 							skinMod = skin ()
@@ -3713,7 +4178,7 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 							for x = 1 to meshArray.mesh.geometry.weight[1].count do (
 								bi = #()
 								wv = #()
-								for j = 1 to 4 do (
+								for j = 1 to meshArray.mesh.geometry.boneid[1][x].count do (
 									boneid = meshArray.mesh.geometry.boneid[1][x][j]
 									weight = meshArray.mesh.geometry.weight[1][x][j]
 									if boneid<1 or boneid>=boneArray.count do (
@@ -3729,6 +4194,63 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 								skinOps.ReplaceVertexWeights skinMod x bi wv
 								)
 							)
+							*/
+						if skinON==true and boneON==true and bone_count > 0 do (
+							select msh 
+							max modify mode
+							skinMod = skin ()
+							addModifier msh skinMod
+							num_bones = bonePallete[1].count
+							for x = 1 to num_bones do (
+								if bonePallete[1][x]!=0 do (
+									if x!=bonePallete[1].count
+									then (skinOps.addbone skinMod boneArray[(bonePallete[1][x])] 0)
+									else (skinOps.addbone skinMod boneArray[(bonePallete[1][x])] 1)
+									)
+								)
+							boneIDMap = #()
+							for x = 1 to num_bones do (
+								boneNameIdx = findItem meshArray.skeleton.name (skinOps.GetBoneName skinMod x 0)
+								if boneNameIdx == 0 do boneNameIdx = 1
+								boneIDMap[x] = boneNameIdx
+								)
+							modPanel.setCurrentObject skinMod
+							
+							for x = 1 to meshArray.mesh.geometry.weight[1].count do (
+								bi = #()
+								wv = #()
+								wt = 0.0
+								for j = 1 to meshArray.mesh.geometry.boneid[1][x].count do (
+									boneid = meshArray.mesh.geometry.boneid[1][x][j]
+									weight = meshArray.mesh.geometry.weight[1][x][j]
+									
+									if weight > 0.0 do (
+										if weight > 1.0 do weight = 1.0
+										wt += weight
+										b = findItem bi (findItem boneIDMap boneid)
+										if b == 0 then (
+											append bi (findItem boneIDMap boneid)
+											append wv weight
+											)
+										else (
+											wv[b] += weight
+											)
+										)
+									)
+								wv[1] += wt
+								if i == 1 and x < 10 do (
+									print bi
+									print wv
+									format "--\n"
+									)
+								skinOps.ReplaceVertexWeights skinMod x bi wv
+								)
+							)
+						
+						
+						-- Aug 17 2019
+						-- function was basically not working, replaced it
+						/*
 						if normON==true do (
 							normMod = Edit_Normals()
 							addModifier msh normMod
@@ -3741,6 +4263,34 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 							normMod.EditNormalsMod.SetSelection normSel node:msh
 							normMod.EditNormalsMod.Break ()
 							subobjectLevel = 0
+							)
+							*/
+						if normON do (
+							max modify mode
+							select msh
+							normMod = Edit_Normals()
+							normMod.selectBy = 1
+							normMod.displayLength = 0.50
+							normMod.showHandles = on
+							
+							modPanel.setCurrentObject normMod
+							addModifier msh normMod
+							
+							normMod.EditNormalsMod.SetSelection #{1..(normMod.GetNumNormals())}
+							--normMod.EditNormalsMod.Break()
+							normMod.EditNormalsMod.Reset()
+							for x = 1 to normMod.EditNormalsMod.GetNumFaces() do (
+								for j = 1 to 3 do (
+									normMod.SetNormalID x j faceArray[x][j]
+									)
+								)
+							for x = 1 to meshArray.mesh.geometry.normal[1].count do (
+								subobjectLevel = 1
+								normMod.EditNormalsMod.SetNormal x meshArray.mesh.geometry.normal[1][x]
+								subobjectLevel = 0
+								)
+							normMod.EditNormalsMod.MakeExplicit()
+							enableSceneRedraw()
 							)
 						)
 					)
@@ -3768,7 +4318,6 @@ rollout appGUI "XNALara Converter" width:175 height:354 (
 						)
 					)
 				)
-			
 			Print "Done!"
 			)
 		else (
@@ -3954,6 +4503,7 @@ rollout exoptions "Extra Options" width:290 height:310 (
 	checkbox op_chk12 "Normalize Normals" pos:[28,138] width:107 height:15 checked:normVN
 	button op_btn21 "SwapWeights" pos:[24,249] width:80 height:17
 	button op_btn22 "Review Ascii" pos:[110,249] width:80 height:17
+	
 	on op_edt31 entered txt4 do (if (txt4 as float)!=undefined do metric_scale=(txt4 as float))
 	on op_edt32 entered txt4 do (if (txt4 as float)!=undefined do imperial_scale=(txt4 as float))
 	on op_edt34 entered txt4 do (if (txt4 as float)!=undefined do boneLimit=(txt4 as float))
@@ -3971,10 +4521,18 @@ rollout exoptions "Extra Options" width:290 height:310 (
 	on opt_chk_save changed theState do (useINI=theState)
 	on op_chk_unicode changed theState do (enable_export_mode2=theState)
 	on op_chk11 changed theState do (mshOptimise=theState)
-	on op_chk31 changed theState do(
-	if theState==false do (op_edt33.enabled=true;bsenable=true;guessBone=false)
-	if theState==true do(op_edt33.enabled=false;bsenable=false;guessBone=true)
-	)
+	on op_chk31 changed theState do (
+		if theState==false do (
+			op_edt33.enabled=true
+			bsenable=true
+			guessBone=false
+			)
+		if theState==true do(
+			op_edt33.enabled=false
+			bsenable=false
+			guessBone=true
+			)
+		)
 	on exoptions close do (
 		if opt_chk_save.checked == true then (
 			format_ini iniFile
@@ -4001,42 +4559,69 @@ rollout exoptions "Extra Options" width:290 height:310 (
 			writeINI iniFile "General" "enable" useINI
 			)
 		)
-	
-
-on op_edt33 entered txt4 do(if (txt4 as float)!=undefined do (boneSize=(txt4 as float)))
-
--- on op_btn22 pressed do
-on op_btn21 pressed do(objArray=#();weights=#();vertids=#();boneids=#()
-classesArr = #(Editable_Mesh,Editable_Poly,PolyMeshObject)
-for o in selection where findItem classesArr (classof o) > 0 do append objArray o
-classesArr = #(BoneGeometry,Biped_Object,Dummy,IK_Chain_Object,Point)
-for o in selection where findItem classesArr (classof o) > 0 do append objArray o
-if objArray.count==3 then (SkinMod=undefined;BoneOne=undefined;BoneTwo=undefined
-for o in objArray[1].modifiers where classof o==Skin do SkinMod=o
-if SkinMod!=undefined then(
-max modify mode;select objArray[1]
-modPanel.setCurrentObject skinMod
-for i = 1 to (skinOps.GetNumberBones SkinMod) do (
-if (skinOps.GetBoneName SkinMod i 1)==objArray[2].name do BoneOne=i
-if (skinOps.GetBoneName SkinMod i 1)==objArray[3].name do BoneTwo=i)
-if BoneOne!=undefined AND BoneTwo!=undefined then(
-for i = 1 to objArray[1].numverts do(idx=false;wv=#();bi=#()
-for x = 1 to (skinOps.GetVertexWeightCount skinMod i) do(
-bone_weight = skinops.getvertexweight skinMod i x
-bone_index = skinOps.GetVertexWeightBoneID skinMod i x
-if bone_index==BoneOne then (
-idx=true;append wv bone_weight;append bi BoneTwo)
-else(if bone_index==BoneTwo then (
-idx=true;append wv bone_weight;append bi BoneOne)
-else(append wv bone_weight;append bi bone_index)))
-if idx==true do(append weights wv;append boneids bi;append vertids i))
-if weights.count!=0 do(for i = 1 to vertids.count do(
-skinOps.ReplaceVertexWeights SkinMod vertids[i] boneids[i] weights[i]))
-)else(MessageBox "ERROR!!\n\nSelect Bones Were Not Found In Selected Mesh's Skin Modifier..")
-)else(MessageBox "ERROR!!\n\nA Skin Modifier Was Not Found!")
-)else(MessageBox "ERROR!!\n\nPlease Select 3 Objects\n- 1 Mesh\n- 2 Bones"))
-
-on op_btn_close pressed do(destroydialog exoptions)
+	on op_edt33 entered txt4 do(
+		if (txt4 as float)!=undefined do (
+			boneSize=(txt4 as float)
+			)
+		)
+	-- on op_btn22 pressed do
+	on op_btn21 pressed do (
+		objArray=#()
+		weights=#()
+		vertids=#()
+		boneids=#()
+		
+		for o in selection where findItem #(Editable_Mesh,Editable_Poly,PolyMeshObject) (classof o) > 0 do append objArray o
+		for o in selection where findItem #(BoneGeometry,Biped_Object,Dummy,IK_Chain_Object,Point) (classof o) > 0 do append objArray o
+		
+		if objArray.count == 3 then (
+			SkinMod=undefined
+			BoneOne=undefined
+			BoneTwo=undefined
+			for o in objArray[1].modifiers where classof o==Skin do SkinMod=o
+			if SkinMod!=undefined then (
+				max modify mode;select objArray[1]
+				modPanel.setCurrentObject skinMod
+				for i = 1 to (skinOps.GetNumberBones SkinMod) do (
+					if (skinOps.GetBoneName SkinMod i 1)==objArray[2].name do BoneOne=i
+					if (skinOps.GetBoneName SkinMod i 1)==objArray[3].name do BoneTwo=i
+					)
+				if BoneOne!=undefined AND BoneTwo!=undefined then (
+					for i = 1 to objArray[1].numverts do (
+						idx=false
+						wv=#()
+						bi=#()
+						for x = 1 to (skinOps.GetVertexWeightCount skinMod i) do (
+							bone_weight = skinops.getvertexweight skinMod i x
+							bone_index = skinOps.GetVertexWeightBoneID skinMod i x
+							if bone_index==BoneOne then (
+								idx=true;append wv bone_weight;append bi BoneTwo
+								)
+							else (
+								if bone_index==BoneTwo then (
+									idx=true
+									append wv bone_weight;append bi BoneOne
+									)
+								else(append wv bone_weight;append bi bone_index)
+								)
+							)
+						if idx==true do(append weights wv;append boneids bi;append vertids i)
+						)
+					if weights.count!=0 do (
+						for i = 1 to vertids.count do (
+							skinOps.ReplaceVertexWeights SkinMod vertids[i] boneids[i] weights[i]
+							)
+						)
+					)
+				else(MessageBox "ERROR!!\n\nSelect Bones Were Not Found In Selected Mesh's Skin Modifier..")
+				)
+			else(MessageBox "ERROR!!\n\nA Skin Modifier Was Not Found!")
+			)
+		else(MessageBox "ERROR!!\n\nPlease Select 3 Objects\n- 1 Mesh\n- 2 Bones")
+		)
+	on op_btn_close pressed do(
+		destroydialog exoptions
+		)
 	)
 rollout expPath "Save to Fixed Path" width:303 height:69 ( --115
 	editText edt2b_1 "Path: " pos:[9,8] width:282 height:16 text:ssource
@@ -4081,8 +4666,15 @@ rollout impPath "Open from Fixed Path" width:303 height:69 (
 	on edt1b_1 entered txt do fsource=txt
 	on btn1b_1 pressed do (
 		fsource = GetOpenFileName \
-		caption:"Open XnaLara MESH Model File" \
-		types: "Binary(*.mesh)|*.MESH|Text(*.ascii)|*.ASCII|"
+			caption:"Select Xnalara File" \
+			types: (
+				"All Supported Formats (*.mesh, *xps, *.ascii)|*.MESH;*.XPS;*.ASCII|" + \
+				"Binary File(*.mesh)|*.MESH|" + \
+				"Text File(*.ascii)|*.ASCII|" + \
+				"XNA Posing Studio (*.xps)|" + \	--XNAaraL's Plagiarism Studios
+				"*.XPS|Pose File(*.pose)|*.POSE|" + \
+				"All files (*.*)|*.*|"
+				)
 		if fsource!=undefined do edt1b_1.text=fsource
 		)
 	)
