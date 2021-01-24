@@ -9,7 +9,7 @@
 # BulletTools
 >专为动画师定制,自由脚本整合工具~
 ## 帮助文档
-https://acedocs.tk/
+https://space.bilibili.com/2031113
 ## 下载链接
 [![BulletsTools](https://img.shields.io/badge/BulletTools-Download-blue?style=flat-square&logo=github)](https://github.com/AnimatorBullet/BulletTools/releases)
 ## 更新说明
