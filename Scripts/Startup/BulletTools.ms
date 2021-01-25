@@ -3,7 +3,7 @@
  * @Author: Bullet.S
  * @Date: 2019-08-03 17:36:21
  * @LastEditors: Bullet.S
- * @LastEditTime: 2021-01-24 23:39:50
+ * @LastEditTime: 2021-01-25 12:18:35
  * @Email: animator.bullet@foxmail.com
  */
 
@@ -485,7 +485,7 @@ rcmenu menuBsToolsSetting --设置菜单
 
 rollout rolBsTools "" width:rolWidth height:iniBsToolsSize[2]
 (
-	local strTop = ("_BsTools_v" + ver + "_")
+	local strTop = ("BsTools_v" + ver)
 	label lblTop strTop pos:[5,0] width:(rolBsTools.width - 10)
 	label lblSetting "[右击设置]" pos:[15,15] width:(rolBsTools.width - 10)
 
@@ -544,24 +544,33 @@ rollout rolBsTools "" width:rolWidth height:iniBsToolsSize[2]
 	
 	on rolBsTools lbuttondown posMou do
 	(
-		posMouMoved = posMou
-		switchMouseState = on
+		if(iniBsToolsStyle == 0) then
+		(
+			posMouMoved = posMou
+			switchMouseState = on
+		)
 	)
 	
 	on rolBsTools lbuttonup posMou do
 	(
-		switchMouseState = off
+		if(iniBsToolsStyle == 0) then
+		(
+			switchMouseState = off
+		)
 	)
 	
 	on rolBsTools mouseMove pos do
 	(
-		if switchMouseState == on then
+		if(iniBsToolsStyle == 0) then
 		(
-			SetDialogPos rolBsTools (mouse.screenpos - posMouMoved)			
-		)
-		if (uiClientOffsets == undefined) then 
-		(
-			uiClientOffsets = pos - (mouse.screenPos - (getDialogPos rolBsTools)) 
+			if switchMouseState == on then
+			(
+				SetDialogPos rolBsTools (mouse.screenpos - posMouMoved)			
+			)
+			if (uiClientOffsets == undefined) then 
+			(
+				uiClientOffsets = pos - (mouse.screenPos - (getDialogPos rolBsTools)) 
+			)
 		)
 	)
 )
